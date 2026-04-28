@@ -118,18 +118,28 @@ def compare_champion_vs_challenger(config: dict):
     challenger = get_run_metrics(config["registry"]["challenger_alias"])
 
     print("\n=== Champion vs Challenger ===")
-    key_metrics = ["training_roc_auc", "training_f1_score", "training_accuracy_score"]
+    # Prefer evaluate metrics (test set). Fall back to autolog training metrics.
+    key_metrics = [
+        ("roc_auc",           "training_roc_auc"),
+        ("f1_score",          "training_f1_score"),
+        ("accuracy_score",    "training_accuracy_score"),
+    ]
 
     header = f"{'Metric':<35} {'Champion':>12} {'Challenger':>12}"
     print(header)
     print("-" * len(header))
 
-    for metric in key_metrics:
-        champ_val = champion["metrics"].get(metric, "N/A") if champion else "N/A"
-        chall_val = challenger["metrics"].get(metric, "N/A") if challenger else "N/A"
-        cv = f"{champ_val:.4f}" if isinstance(champ_val, float) else champ_val
-        clv = f"{chall_val:.4f}" if isinstance(chall_val, float) else chall_val
-        print(f"{metric:<35} {cv:>12} {clv:>12}")
+    for primary, fallback in key_metrics:
+        def get_val(data):
+            if not data:
+                return "N/A"
+            return data["metrics"].get(primary) or data["metrics"].get(fallback, "N/A")
+
+        champ_val = get_val(champion)
+        chall_val = get_val(challenger)
+        cv  = f"{champ_val:.4f}"  if isinstance(champ_val,  float) else champ_val
+        clv = f"{chall_val:.4f}"  if isinstance(chall_val,  float) else chall_val
+        print(f"{primary:<35} {cv:>12} {clv:>12}")
 
     if champion:
         print(f"\nChampion  → version {champion['version']} (run {champion['run_id'][:8]}...)")

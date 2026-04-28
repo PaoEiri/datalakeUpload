@@ -61,7 +61,6 @@ def train(config_path: str, model_type: str | None = None):
 
     model, params = build_model(config, model_type)
 
-    # autolog captures params, metrics, and the model automatically
     mlflow.sklearn.autolog(log_input_examples=True, log_model_signatures=True)
 
     with mlflow.start_run(run_name=model_type) as run:
@@ -69,10 +68,6 @@ def train(config_path: str, model_type: str | None = None):
         mlflow.set_tag("dataset", "telco-churn")
 
         model.fit(X_train, y_train)
-
-        # Explicit log_model ensures the logged-model entity exists in MLflow 3.x
-        # (autolog may not create it for Pipeline wrappers in all contexts)
-        mlflow.sklearn.log_model(model, "model", input_example=X_train[:5])
 
         print(f"\nRun ID: {run.info.run_id}")
         print(f"Experiment: {config['mlflow']['experiment_name']}")

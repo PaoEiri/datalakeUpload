@@ -1,178 +1,76 @@
-# Módulo MLOps — MLflow + Prefect
+# Módulo MLOps — MLflow: Tracking, Evaluación y Model Registry
 
-Repositorio del módulo práctico de MLOps. Dos clases progresivas sobre el ciclo de vida de un modelo ML en producción, usando Docker como plataforma de despliegue.
+Este repositorio contiene una práctica completa de MLOps basada en un caso de uso real: predecir la fuga de clientes (churn) en una empresa de telecomunicaciones. El objetivo es aplicar el ciclo de vida completo de un modelo de machine learning, desde el entrenamiento hasta la inferencia en producción, usando herramientas modernas del ecosistema MLOps.
 
----
+El proyecto está diseñado para ejecutarse de forma local con Docker, sin necesidad de Kubernetes ni infraestructura cloud. Todo el stack se levanta con un único comando y es fácilmente adaptable a un entorno de producción real.
 
-## Estructura
+## Tecnologías utilizadas
 
-```
-modulo-mlops/
-├── configs/
-│   └── config.yaml          # Hiperparámetros, rutas, nombres de experimento
-├── data/
-│   └── raw/
-│       └── telco_churn.csv  # Dataset Telco Customer Churn (7043 filas)
-├── flows/                   # Clase 2 — flows de Prefect
-│   ├── 01_hello_prefect.py      # Intro: @flow, @task, logging
-│   ├── 02_data_validation.py    # Retries y observabilidad
-│   ├── training_pipeline.py     # Pipeline completo (train → eval → register)
-│   ├── retraining_trigger.py    # Schedule + sub-flows
-│   ├── champion_promotion.py    # Promoción automática por AUC-ROC
-│   └── deploy.py                # Registra work pool y deployments
-├── infra/
-│   ├── docker-compose.yml           # Stack Clase 1: PostgreSQL + MinIO + MLflow
-│   ├── docker-compose.prefect.yml   # Stack Clase 2: Prefect server + worker
-│   ├── Dockerfile.mlflow            # Imagen MLflow con dependencias S3
-│   ├── Dockerfile.worker            # Imagen worker con paquetes ML pre-instalados
-│   ├── .env                         # Variables de entorno (no commitear en prod)
-│   └── init-minio.sh                # One-shot: crea bucket en MinIO
-├── notebooks/
-│   └── 01_eda.ipynb         # Exploración del dataset
-└── src/
-    ├── data_prep.py          # Carga y split del dataset
-    ├── train.py              # Entrenamiento con MLflow autolog
-    ├── evaluate.py           # mlflow.evaluate() + métricas y artifacts
-    ├── register.py           # Model Registry: challenger/champion aliases
-    └── predict.py            # Inferencia cargando @champion del registry
-```
+- MLflow 3.x – Seguimiento de experimentos, evaluación de modelos y registro con aliases
+- PostgreSQL – Backend de metadatos para MLflow
+- MinIO – Almacenamiento de artefactos compatible con S3
+- Docker Compose – Orquestación local del stack completo
+- scikit-learn / XGBoost – Modelos de clasificación
+- uv – Gestión de entorno y dependencias Python
 
----
+## Referencias recomendadas
 
-## Clase 1 — MLflow: tracking, evaluación y registry
+- Whitepaper de Google sobre el ciclo de vida del ML:  
+  https://services.google.com/fh/files/misc/practitioners_guide_to_mlops_whitepaper.pdf
 
-**Stack:** PostgreSQL (backend) + MinIO (artifacts S3) + MLflow server
+Durante mi doctorado, escribí dos artículos directamente relacionados con la infraestructura utilizada en esta práctica:
 
-### Arrancar
+- Artículo sobre la infraestructura MLOps que sirve de base para este repositorio:  
+  https://ieeexplore.ieee.org/abstract/document/10588954/
 
-```bash
-cd infra
-docker compose up -d
-```
+- Artículo con un caso de uso completo en imágenes satélite, donde se automatiza el ciclo de vida de un modelo de ML:  
+  https://www.sciencedirect.com/science/article/pii/S0167739X24004631
 
-Esperar a que los 4 servicios estén healthy (~30 s). Verificar:
-- MLflow UI: http://localhost:5001
-- MinIO Console: http://localhost:9001 (minioadmin / minioadmin)
+Recomiendo la lectura de ambos si te interesa profundizar en la aplicación práctica de MLOps.
 
-### Flujo de trabajo
+## Estructura del repositorio
 
-```bash
-# 1. Entrenar (xgboost, random_forest, logistic_regression)
-uv run python src/train.py --config configs/config.yaml --model-type xgboost
-uv run python src/train.py --config configs/config.yaml --model-type random_forest
+Cada carpeta representa una fase del ciclo de vida del modelo. El orden recomendado para explorar el proyecto es:
 
-# 2. Evaluar un run (copiar RUN_ID de la UI)
-uv run python src/evaluate.py --run-id <RUN_ID>
+1. `infra/`  
+   Stack de infraestructura completo: PostgreSQL como backend de metadatos, MinIO como almacén de artefactos compatible con S3, y el servidor MLflow conectando ambos. Se levanta con Docker Compose en un único comando.
 
-# 3. Registrar como challenger y promover a champion
-uv run python src/register.py --run-id <RUN_ID>
-uv run python src/register.py --compare
-uv run python src/register.py --promote-version <N>
+2. `src/data_prep.py`  
+   Carga y preprocesamiento del dataset: codificación de variables categóricas, split train/test y limpieza de valores nulos.
 
-# 4. Inferencia con el champion activo
-uv run python src/predict.py --input data/raw/telco_churn.csv
-```
+3. `src/train.py`  
+   Entrenamiento de modelos (Logistic Regression, Random Forest, XGBoost) con MLflow autolog. Registra automáticamente parámetros, métricas y el modelo como artefacto.
 
----
+4. `src/evaluate.py`  
+   Evaluación del modelo usando `mlflow.models.evaluate()`. Genera métricas de clasificación, curva ROC, matriz de confusión, curva precision-recall e importancia de features con SHAP, todo registrado como artefactos en MLflow.
 
-## Clase 2 — Prefect: orquestación + integración con MLflow
+5. `src/register.py`  
+   Gestión del Model Registry con el patrón champion/challenger. Registra un modelo como `@challenger`, permite comparar sus métricas frente al `@champion` actual y promoverlo si lo supera.
 
-**Stack:** todo lo anterior + Prefect server + Prefect worker (process pool)
+6. `src/predict.py`  
+   Inferencia cargando siempre el modelo con el alias `@champion` desde el registry. Sin hardcodear versiones — el alias apunta automáticamente al modelo en producción.
 
-### Arrancar el stack completo
+7. `notebooks/01_eda.ipynb`  
+   Exploración inicial del dataset: distribuciones, correlaciones y análisis de la variable objetivo.
 
-```bash
-cd infra
+## Dataset
 
-# Primera vez: construir imagen del worker (solo necesario una vez)
-docker compose -f docker-compose.yml -f docker-compose.prefect.yml build
+- Dataset Telco Customer Churn disponible en Kaggle:  
+  https://www.kaggle.com/datasets/blastchar/telco-customer-churn
 
-# Levantar todo
-docker compose -f docker-compose.yml -f docker-compose.prefect.yml up -d
-```
+El dataset contiene 7043 registros de clientes con características como tipo de contrato, servicios contratados y cargo mensual. La variable objetivo indica si el cliente canceló el servicio. Se utiliza sin reducción ya que su tamaño es manejable para ejecución local.
 
-Servicios disponibles:
-- Prefect UI: http://localhost:4200
-- MLflow UI: http://localhost:5001
-- MinIO Console: http://localhost:9001
+## Recursos de aprendizaje recomendados
 
-### Registrar deployments (solo una vez tras levantar el stack)
+- Curso introductorio de Andrew Ng sobre ML en producción (Coursera, 10 horas):  
+  https://www.coursera.org/learn/introduction-to-machine-learning-in-production
 
-```bash
-PREFECT_API_URL=http://localhost:4200/api uv run python flows/deploy.py
-```
+- Especialización en MLOps de Duke University (Coursera):  
+  https://www.coursera.org/specializations/mlops-machine-learning-duke
 
-### Ejecutar flows localmente
+- Curso de MLOps en Google Cloud (Coursera):  
+  https://www.coursera.org/learn/gcp-production-ml-systems
 
-```bash
-# Flow 1 — Intro: @task, @flow, logging
-PREFECT_API_URL=http://localhost:4200/api uv run python flows/01_hello_prefect.py
+## Objetivo
 
-# Flow 2 — Retries y observabilidad
-PREFECT_API_URL=http://localhost:4200/api uv run python flows/02_data_validation.py
-
-# Flow 3 — Pipeline completo: train → evaluate → register
-PREFECT_API_URL=http://localhost:4200/api uv run python flows/training_pipeline.py
-
-# Flow 4 — Sub-flows y schedules (usar max_age_days=0 para forzar retrain)
-PREFECT_API_URL=http://localhost:4200/api uv run python -c "
-import sys; sys.path.insert(0,'flows'); sys.path.insert(0,'src')
-from retraining_trigger import retraining_trigger_flow
-retraining_trigger_flow(max_age_days=0)
-"
-
-# Flow 5 — Promoción automática de champion
-PREFECT_API_URL=http://localhost:4200/api uv run python flows/champion_promotion.py
-```
-
-Los deployments registrados también se pueden lanzar desde la UI en http://localhost:4200 → Deployments.
-
-### Parar el stack
-
-```bash
-cd infra
-
-# Parar sin borrar datos
-docker compose -f docker-compose.yml -f docker-compose.prefect.yml down
-
-# Parar y borrar volúmenes (reset completo)
-docker compose -f docker-compose.yml -f docker-compose.prefect.yml down -v
-```
-
----
-
-## Requisitos
-
-- Docker Desktop ≥ 4.x
-- Python ≥ 3.11 (el stack usa Python 3.14 en el host, 3.11 en los workers Docker)
-- [uv](https://docs.astral.sh/uv/) para gestión de entorno local
-
-```bash
-# Instalar dependencias locales
-uv sync
-```
-
----
-
-## Arquitectura
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  Host (uv run python flows/...)                         │
-│                                                         │
-│  Prefect Client ──────────────────────────────────────► │
-│                                    Prefect Server :4200 │
-│  MLflow Client ───────────────────────────────────────► │
-│                                    MLflow Server  :5001 │
-└─────────────────────────────────────────────────────────┘
-                        Docker network
-┌─────────────────────────────────────────────────────────┐
-│  prefect-server   :4200   ◄── prefect-worker            │
-│  mlflow-server    :5001   ◄── prefect-worker (flows)    │
-│  mlflow-postgres  :5432   ◄── mlflow-server             │
-│                           ◄── prefect-server            │
-│  mlflow-minio     :9000   ◄── mlflow-server (artifacts) │
-└─────────────────────────────────────────────────────────┘
-```
-
-El worker Docker ejecuta los deployments cuando se lanzan desde la UI de Prefect. Los flows ejecutados localmente con `uv run` también aparecen en la UI de Prefect (si `PREFECT_API_URL` está seteado).
+Este repositorio tiene un enfoque educativo y práctico, ideal para personas que quieran entender cómo se gestiona el ciclo de vida de un modelo de machine learning con herramientas reales. Cada componente está desacoplado y puede ejecutarse de forma independiente, lo que facilita la comprensión de cada etapa del proceso sin necesidad de infraestructura compleja.
