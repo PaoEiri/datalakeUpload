@@ -1,0 +1,10 @@
+mlflow==3.11.1
+scikit-learn>=1.4
+xgboost>=2.0
+pandas>=2.0
+numpy>=1.26
+pyyaml>=6.0
+boto3>=1.34          # MLflow needs this to talk to S3/MinIO
+shap>=0.46            # feature importance plots in mlflow.evaluate()
+numba>=0.60           # pin modern numba to avoid llvmlite==0.36.0 (incompatible with Python 3.11+)
+matplotlib>=3.8

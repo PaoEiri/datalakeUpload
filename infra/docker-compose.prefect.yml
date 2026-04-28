@@ -1,0 +1,57 @@
+services:
+
+  # One-shot: creates the 'prefect' database in the shared postgres
+  prefect-db-setup:
+    image: postgres:16-alpine
+    container_name: prefect-db-setup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    entrypoint: ["sh", "-c", "psql -h postgres -U ${POSTGRES_USER} -c \"CREATE DATABASE prefect\" 2>/dev/null || true"]
+    restart: "no"
+
+  prefect-server:
+    image: prefecthq/prefect:3.6.12-python3.11
+    container_name: prefect-server
+    restart: unless-stopped
+    depends_on:
+      prefect-db-setup:
+        condition: service_completed_successfully
+    environment:
+      PREFECT_SERVER_DATABASE_CONNECTION_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/prefect
+      PREFECT_SERVER_ANALYTICS_ENABLED: "false"
+      PREFECT_UI_API_URL: http://localhost:4200/api
+    ports:
+      - "4200:4200"
+    command: prefect server start --host 0.0.0.0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4200/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  prefect-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    image: prefect-worker-churn
+    container_name: prefect-worker
+    restart: unless-stopped
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      PYTHONPATH: /app/src
+    volumes:
+      - ..:/app
+    working_dir: /app
+    command: >
+      bash -c "prefect work-pool create churn-process-pool --type process 2>/dev/null || true &&
+               prefect worker start --pool churn-process-pool --type process"

@@ -1,0 +1,35 @@
+mlflow:
+  tracking_uri: "http://localhost:5001"
+  experiment_name: "churn-prediction"
+
+data:
+  raw_path: "data/raw/telco_churn.csv"
+  test_size: 0.2
+  random_state: 42
+
+model:
+  # v1: logistic_regression | v2: random_forest | v3: xgboost
+  type: "logistic_regression"
+
+  logistic_regression:
+    C: 1.0
+    max_iter: 1000
+    solver: "lbfgs"
+
+  random_forest:
+    n_estimators: 100
+    max_depth: 10
+    min_samples_split: 5
+    random_state: 42
+
+  xgboost:
+    n_estimators: 200
+    max_depth: 6
+    learning_rate: 0.1
+    subsample: 0.8
+    random_state: 42
+
+registry:
+  model_name: "churn-model"
+  champion_alias: "champion"
+  challenger_alias: "challenger"

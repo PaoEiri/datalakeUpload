@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+*.egg
+
+# Environment
+.env
+infra/.env
+
+# Data
+data/raw/
+data/processed/
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# MLflow local runs (when not using remote server)
+mlruns/
+mlartifacts/
+
+# OS
+.DS_Store
+.guion.md
