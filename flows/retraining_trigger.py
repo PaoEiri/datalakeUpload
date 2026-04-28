@@ -66,4 +66,14 @@ def retraining_trigger_flow(
 
 
 if __name__ == "__main__":
-    retraining_trigger_flow()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", default="configs/config.yaml")
+    parser.add_argument("--max-age-days", type=int, default=7)
+    parser.add_argument("--model-type", default="xgboost")
+    args = parser.parse_args()
+    retraining_trigger_flow(
+        config_path=args.config,
+        max_age_days=args.max_age_days,
+        model_type=args.model_type,
+    )
