@@ -74,3 +74,9 @@ El dataset contiene 7043 registros de clientes con características como tipo de
 ## Objetivo
 
 Este repositorio tiene un enfoque educativo y práctico, ideal para personas que quieran entender cómo se gestiona el ciclo de vida de un modelo de machine learning con herramientas reales. Cada componente está desacoplado y puede ejecutarse de forma independiente, lo que facilita la comprensión de cada etapa del proceso sin necesidad de infraestructura compleja.
+
+
+## Comandos prefect
+
+cd infra && docker compose -f docker-compose.yml -f docker-compose.prefect.yml build
+docker compose -f docker-compose.yml -f docker-compose.prefect.yml up -d
