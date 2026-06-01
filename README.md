@@ -38,10 +38,10 @@ Cada carpeta representa una fase del ciclo de vida del modelo. El orden recomend
 2. `src/data_prep.py`  
    Carga y preprocesamiento del dataset: codificación de variables categóricas, split train/test y limpieza de valores nulos.
 
-3. `src/train.py`  
-   Entrenamiento de modelos (Logistic Regression, Random Forest, XGBoost) con MLflow autolog. Registra automáticamente parámetros, métricas y el modelo como artefacto.
+3. `src/api/app.py`, `src/api/datasets.py`
+   Servicio FastAPI para subir datasets CSV/JSON, almacenar los bytes en MinIO, extraer metadatos en PostgreSQL y exponer un catálogo de datasets.
 
-4. `src/evaluate.py`  
+4. `src/train.py`
    Evaluación del modelo usando `mlflow.models.evaluate()`. Genera métricas de clasificación, curva ROC, matriz de confusión, curva precision-recall e importancia de features con SHAP, todo registrado como artefactos en MLflow.
 
 5. `src/register.py`  
@@ -80,3 +80,16 @@ Este repositorio tiene un enfoque educativo y práctico, ideal para personas que
 
 cd infra && docker compose -f docker-compose.yml -f docker-compose.prefect.yml build
 docker compose -f docker-compose.yml -f docker-compose.prefect.yml up -d
+
+
+ docker compose -f infra/docker-compose.yml -f infra/docker-compose.prefect.yml build
+
+ docker compose -f infra/docker-compose.yml -f infra/docker-compose.prefect.yml up -d
+## API de datasets_upload
+
+Una vez levantado el stack, el servicio de datasets_upload está disponible en `http://localhost:8000`.
+
+- `POST /datasets_upload/upload` — subir CSV o JSON, almacenar en MinIO y programar validación asíncrona.
+- `GET /datasets_upload` — listar todos los datasets uploads disponibles y metadatos básicos.
+- `GET /datasets_upload/{dataset_id}` — obtener información detallada de un dataset upload.
+- `GET /datasets_upload/{dataset_id}/preview` — ver las primeras filas extraídas sin descargar el dataset completo.
