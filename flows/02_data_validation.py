@@ -5,16 +5,17 @@ Demuestra retries automáticos en Prefect con un healthcheck a MLflow.
 
 Ejecutar:
     uv run python flows/02_data_validation.py
-    PREFECT_API_URL=http://localhost:4200/api uv run python flows/02_data_validation.py
+    PREFECT_API_URL=${PREFECT_API_URL} uv run python flows/02_data_validation.py
 """
 
-import os
 import random
 
 import pandas as pd
 import requests
 from prefect import flow, task
 from prefect.logging import get_run_logger
+
+from src.config import settings
 
 
 @task(name="check-mlflow-health", retries=3, retry_delay_seconds=5)
@@ -57,7 +58,7 @@ def data_validation_flow(
     data_path: str = "data/raw/telco_churn.csv",
     tracking_uri: str | None = None,
 ):
-    uri = tracking_uri or os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5001")
+    uri = tracking_uri or settings.mlflow_tracking_uri
     check_mlflow_health(uri)
     stats = load_and_validate(data_path)
     print(f"Validation complete: {stats}")

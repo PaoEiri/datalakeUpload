@@ -8,12 +8,13 @@ Usage:
 """
 
 import argparse
-import os
 
 import mlflow
 import mlflow.sklearn
 import pandas as pd
 import yaml
+
+from src.config import settings
 
 from data_prep import encode_features, load_and_clean
 
@@ -24,7 +25,7 @@ def load_config(path: str) -> dict:
 
 
 def load_champion(config: dict):
-    mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"]))
+    mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
     model_name = config["registry"]["model_name"]
     alias = config["registry"]["champion_alias"]
     model_uri = f"models:/{model_name}@{alias}"

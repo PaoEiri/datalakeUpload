@@ -1,3 +1,4 @@
+
 services:
 
   # One-shot: creates the 'prefect' database in the shared postgres
@@ -20,14 +21,14 @@ services:
       prefect-db-setup:
         condition: service_completed_successfully
     environment:
-      PREFECT_SERVER_DATABASE_CONNECTION_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/prefect
+      PREFECT_SERVER_DATABASE_CONNECTION_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/prefect
       PREFECT_SERVER_ANALYTICS_ENABLED: "false"
-      PREFECT_UI_API_URL: http://localhost:4200/api
+      PREFECT_UI_API_URL: http://${PREFECT_API_HOST}:${PREFECT_API_PORT}/api
     ports:
       - "4200:4200"
     command: prefect server start --host 0.0.0.0
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4200/api/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4200/api/health')"]
       interval: 10s
       timeout: 5s
       retries: 15
@@ -43,9 +44,7 @@ services:
       prefect-server:
         condition: service_healthy
     environment:
-      PREFECT_API_URL: http://prefect-server:4200/api
-      MLFLOW_TRACKING_URI: http://mlflow:5000
-      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      PREFECT_API_URL: http://${PREFECT_API_HOST}:${PREFECT_API_PORT}/api
       AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
       AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
       PYTHONPATH: /app/src

@@ -5,11 +5,12 @@ Compara AUC-ROC de @champion vs @challenger.
 Si el challenger supera al champion por encima del threshold, lo promueve.
 
 Ejecutar:
-    PREFECT_API_URL=http://localhost:4200/api uv run python flows/champion_promotion.py
+    PREFECT_API_URL=${PREFECT_API_URL} uv run python flows/champion_promotion.py
 """
 
-import os
 import sys
+
+from src.config import settings
 
 sys.path.insert(0, "src")
 
@@ -25,7 +26,7 @@ from register import promote_to_champion
 @task(name="compare-models")
 def compare_models(config: dict, threshold: float = 0.005) -> tuple[bool, dict]:
     logger = get_run_logger()
-    tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"])
+    tracking_uri = settings.mlflow_tracking_uri
     mlflow.set_tracking_uri(tracking_uri)
     client = MlflowClient(tracking_uri)
     model_name = config["registry"]["model_name"]
@@ -65,7 +66,7 @@ def compare_models(config: dict, threshold: float = 0.005) -> tuple[bool, dict]:
 @task(name="promote-to-champion")
 def task_promote(config: dict) -> None:
     logger = get_run_logger()
-    tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"])
+    tracking_uri = settings.mlflow_tracking_uri
     mlflow.set_tracking_uri(tracking_uri)
     client = MlflowClient(tracking_uri)
     model_name = config["registry"]["model_name"]

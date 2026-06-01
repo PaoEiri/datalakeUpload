@@ -10,11 +10,12 @@ Usage:
 """
 
 import argparse
-import os
 
 import requests
 import mlflow
 import yaml
+
+from src.config import settings
 from mlflow import MlflowClient
 
 
@@ -45,7 +46,7 @@ def load_config(path: str) -> dict:
 
 def register_as_challenger(run_id: str, config: dict) -> int:
     """Register model from run and assign the @challenger alias."""
-    tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"])
+    tracking_uri = settings.mlflow_tracking_uri
     mlflow.set_tracking_uri(tracking_uri)
 
     model_name = config["registry"]["model_name"]
@@ -69,7 +70,7 @@ def register_as_challenger(run_id: str, config: dict) -> int:
 
 def promote_to_champion(version: int, config: dict):
     """Move the @champion alias to the given version."""
-    tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"])
+    tracking_uri = settings.mlflow_tracking_uri
     mlflow.set_tracking_uri(tracking_uri)
 
     model_name = config["registry"]["model_name"]
@@ -96,7 +97,7 @@ def promote_to_champion(version: int, config: dict):
 
 def compare_champion_vs_challenger(config: dict):
     """Print metrics for champion and challenger side by side."""
-    tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"])
+    tracking_uri = settings.mlflow_tracking_uri
     mlflow.set_tracking_uri(tracking_uri)
     client = MlflowClient(tracking_uri)
     model_name = config["registry"]["model_name"]
@@ -158,7 +159,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = load_config(args.config)
-    mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"]))
+    mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
 
     if args.compare:
         compare_champion_vs_challenger(config)

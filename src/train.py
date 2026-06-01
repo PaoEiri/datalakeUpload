@@ -7,11 +7,12 @@ Usage:
 """
 
 import argparse
-import os
 
 import mlflow
 import mlflow.sklearn
 import yaml
+
+from src.config import settings
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
@@ -50,7 +51,7 @@ def train(config_path: str, model_type: str | None = None):
     config = load_config(config_path)
     model_type = model_type or config["model"]["type"]
 
-    mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"]))
+    mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
     mlflow.set_experiment(config["mlflow"]["experiment_name"])
 
     X_train, X_test, y_train, y_test = load_data(

@@ -25,7 +25,7 @@ from training_pipeline import training_pipeline_flow
 @task(name="check-retraining-needed")
 def check_retraining_needed(config: dict, max_age_days: int = 7) -> bool:
     logger = get_run_logger()
-    tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"])
+    tracking_uri = settings.mlflow_tracking_uri
     mlflow.set_tracking_uri(tracking_uri)
     client = MlflowClient(tracking_uri)
     model_name = config["registry"]["model_name"]

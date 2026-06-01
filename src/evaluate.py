@@ -9,12 +9,13 @@ Usage:
 """
 
 import argparse
-import os
 
 import requests
 import mlflow
 import mlflow.models
 import yaml
+
+from src.config import settings
 from mlflow import MlflowClient
 
 from data_prep import load_data
@@ -51,7 +52,7 @@ def get_model_uri(run_id: str, tracking_uri: str, retries: int = 5, delay: float
 def evaluate(run_id: str, config_path: str):
     config = load_config(config_path)
 
-    tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"])
+    tracking_uri = settings.mlflow_tracking_uri
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(config["mlflow"]["experiment_name"])
 

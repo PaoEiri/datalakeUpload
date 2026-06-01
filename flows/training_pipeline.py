@@ -5,7 +5,7 @@ Este es el fichero central de la Clase 2. Conecta los scripts existentes
 de src/ con Prefect sin reescribirlos — solo los envuelve en @task.
 
 Ejecutar manualmente:
-    PREFECT_API_URL=http://localhost:4200/api uv run python flows/training_pipeline.py
+    PREFECT_API_URL=${PREFECT_API_URL} uv run python flows/training_pipeline.py
 
 Lanzar desde la UI: deployment "manual-training" (ver deploy.py)
 """

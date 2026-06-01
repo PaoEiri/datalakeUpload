@@ -1,0 +1,25 @@
+FROM python:3.14-slim
+
+# Instalar dependencias del sistema
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Instalar uv
+RUN pip install uv
+
+# Copiar archivos de dependencias (ANTES de copiar el resto)
+COPY pyproject.toml uv.lock /app/
+
+# Instalar dependencias del proyecto
+RUN uv sync --no-dev
+
+# Copiar el resto del proyecto
+COPY . /app
+
+EXPOSE 8000
+ENV PATH="/app/.venv/bin:$PATH"
+# Usar uvicorn directamente desde el venv creado por uv
+CMD ["uv", "run", "uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]

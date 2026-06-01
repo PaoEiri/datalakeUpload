@@ -1,11 +1,11 @@
 """
 Bloque 2 — Introducción a Prefect: @flow, @task, logging.
-
+ 1. export PREFECT_API_URL="${PREFECT_API_URL}" 2. ejecutar el deploy.py
 Se puede ejecutar sin servidor Prefect activo:
     uv run python flows/01_hello_prefect.py
 
 Con servidor activo (para ver en la UI):
-    PREFECT_API_URL=http://localhost:4200/api uv run python flows/01_hello_prefect.py
+    PREFECT_API_URL=${PREFECT_API_URL} uv run python flows/01_hello_prefect.py
 """
 
 import pandas as pd
@@ -40,4 +40,9 @@ def hello_flow(data_path: str = "data/raw/telco_churn.csv"):
 
 
 if __name__ == "__main__":
+    import os
+
+    from src.config import settings
+
+    os.environ.setdefault("PREFECT_API_URL", settings.prefect_api_url)
     hello_flow()

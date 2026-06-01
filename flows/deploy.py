@@ -2,11 +2,11 @@
 Registra los deployments en Prefect Server (Prefect 3.x).
 
 Ejecutar UNA SOLA VEZ tras levantar el worker:
-    PREFECT_API_URL=http://localhost:4200/api uv run python flows/deploy.py
+    PREFECT_API_URL=${PREFECT_API_URL} uv run python flows/deploy.py
 
 Después puedes lanzar flows desde la UI en http://localhost:4200
 """
-
+#deployment ejecuta un flow en un workpool
 import asyncio
 import sys
 from pathlib import Path
@@ -28,7 +28,7 @@ import os as _os
 REPO_ROOT = _os.environ.get("PREFECT_WORKER_PATH", str(Path(__file__).parent.parent.resolve()))
 
 
-async def ensure_work_pool():
+async def ensure_work_pool():#verifica si hay un workpool sino la crea
     async with get_client() as client:
         try:
             await client.read_work_pool(WORK_POOL)

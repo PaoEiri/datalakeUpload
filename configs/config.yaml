@@ -1,7 +1,3 @@
-mlflow:
-  tracking_uri: "http://localhost:5001"
-  experiment_name: "churn-prediction"
-
 data:
   raw_path: "data/raw/telco_churn.csv"
   test_size: 0.2
