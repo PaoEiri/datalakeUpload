@@ -1,28 +1,27 @@
 import os
-import io
 from typing import Optional, Sequence
 
+from sqlalchemy.orm import Session
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import Dataset
 
 
-async def resolve_dataset_name(session: AsyncSession, original_filename: str) -> str:
+def resolve_dataset_name(db: Session, original_filename: str) -> str:
     base, ext = os.path.splitext(original_filename)
     candidate = original_filename
     index = 0
 
     while True:
-        result = await session.execute(select(Dataset).filter_by(dataset_name=candidate))
+        result = db.execute(select(Dataset).filter_by(dataset_name=candidate))
         if result.scalar_one_or_none() is None:
             return candidate
         index += 1
         candidate = f"{base} ({index}){ext}"
 
 
-async def create_dataset_record(
-    session: AsyncSession,
+def create_dataset_record(
+    db: Session,
     original_filename: str,
     storage_key: str,
     file_format: str,
@@ -32,7 +31,7 @@ async def create_dataset_record(
     dataset_name: Optional[str] = None,
 ) -> Dataset:
     dataset_name = dataset_name or original_filename
-    dataset_name = await resolve_dataset_name(session, dataset_name)
+    dataset_name = resolve_dataset_name(db, dataset_name)
 
     dataset = Dataset(
         dataset_name=dataset_name,
@@ -43,14 +42,15 @@ async def create_dataset_record(
         size_bytes=size_bytes,
         status=status,
     )
-    session.add(dataset)
-    await session.commit()
-    await session.refresh(dataset)
+
+    db.add(dataset)
+    db.commit()
+    db.refresh(dataset)
     return dataset
 
 
-async def update_dataset_status(
-    session: AsyncSession,
+def update_dataset_status(
+    db: Session,
     dataset_id: int,
     status: str,
     row_count: Optional[int] = None,
@@ -59,7 +59,7 @@ async def update_dataset_status(
     preview: Optional[Sequence] = None,
     error_message: Optional[str] = None,
 ) -> Dataset:
-    result = await session.execute(select(Dataset).filter_by(id=dataset_id))
+    result = db.execute(select(Dataset).filter_by(id=dataset_id))
     dataset = result.scalar_one_or_none()
     if dataset is None:
         raise ValueError(f"Dataset {dataset_id} not found")
@@ -76,16 +76,16 @@ async def update_dataset_status(
     if error_message is not None:
         dataset.error_message = error_message
 
-    await session.commit()
-    await session.refresh(dataset)
+    db.commit()
+    db.refresh(dataset)
     return dataset
 
 
-async def get_dataset(session: AsyncSession, dataset_id: int) -> Optional[Dataset]:
-    result = await session.execute(select(Dataset).filter_by(id=dataset_id))
+def get_dataset(db: Session, dataset_id: int) -> Optional[Dataset]:
+    result = db.execute(select(Dataset).filter_by(id=dataset_id))
     return result.scalar_one_or_none()
 
 
-async def list_datasets(session: AsyncSession) -> list[Dataset]:
-    result = await session.execute(select(Dataset).order_by(Dataset.created_at.desc()))
+def list_datasets(db: Session) -> list[Dataset]:
+    result = db.execute(select(Dataset).order_by(Dataset.created_at.desc()))
     return result.scalars().all()

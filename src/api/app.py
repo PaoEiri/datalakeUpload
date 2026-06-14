@@ -1,19 +1,31 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .datasets import router as dataset_router
 from src.config import settings
 from src.storage.minio_client import MinioClient
-from src.db.database import init_db
 
+app = FastAPI(
+    title="Dataset Catalog API",
+    version="0.1.0",
+)
 
-app = FastAPI(title="Dataset Catalog API", version="0.1.0")
+# CORS (opcional)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Registrar rutas
 app.include_router(dataset_router, prefix="/datasets_upload", tags=["datasets_upload"])
 
 
 @app.on_event("startup")
 async def on_startup() -> None:
-    await init_db()
-
+    # Inicializar bucket de MinIO
     minio = MinioClient(
         endpoint_url=settings.minio_endpoint,
         access_key=settings.minio_root_user,

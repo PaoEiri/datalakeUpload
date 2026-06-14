@@ -3,13 +3,20 @@ xgboost>=2.0
 pandas>=2.0
 numpy>=1.26
 pyyaml>=6.0
-boto3>=1.34          # MinIO/S3 client support
-shap>=0.46            # feature importance plots in evaluate
-numba>=0.60           # pin modern numba to avoid llvmlite==0.36.0 (incompatible with Python 3.11+)
+boto3>=1.34
+shap>=0.46
+numba>=0.60
 matplotlib>=3.8
+
 fastapi>=0.110.0
 uvicorn[standard]>=0.23.0
 python-multipart>=0.0.6
+
 sqlalchemy>=2.0.0
-asyncpg>=0.27.0
+psycopg2-binary>=2.9.9     # DRIVER CORRECTO PARA SQL SYNC
+# asyncpg  ❌ ELIMINAR (rompe Prefect y SQLAlchemy sync)
+
 pydantic>=2.5.0
+prefect>=3.0.0
+minio>=7.2.0
+

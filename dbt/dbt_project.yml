@@ -1,0 +1,17 @@
+name: datalake
+version: '1.0.0'
+profile: datalake
+
+model-paths: ["models"]
+
+models:
+  datalake:
+    staging:
+      +schema: staging
+      +materialized: view
+    core:
+      +schema: core
+      +materialized: table
+    marts:
+      +schema: marts
+      +materialized: table

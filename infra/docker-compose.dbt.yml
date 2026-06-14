@@ -1,0 +1,21 @@
+services:
+dbt:
+    build:
+      context: .
+      dockerfile: Dockerfile.dbt
+    container_name: dbt
+    profiles: ["dbt"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DBT_HOST: ${POSTGRES_HOST}
+      DBT_PORT: ${POSTGRES_PORT}
+      DBT_USER: ${POSTGRES_USER}
+      DBT_PASSWORD: ${POSTGRES_PASSWORD}
+      DBT_DATABASE: ${POSTGRES_DB}
+      DBT_SCHEMA: staging
+    volumes:
+      - ../dbt:/dbt
+    working_dir: /dbt
+    command: ["tail", "-f", "/dev/null"]
