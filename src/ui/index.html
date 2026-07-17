@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Dataset Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<h1>Gestión de Datasets</h1>
+
+<section id="upload-section">
+    <h2>Subir archivo</h2>
+    <input type="file" id="file-input">
+    <button onclick="uploadFile()">Subir</button>
+</section>
+
+<section id="list-section">
+    <h2>Listado de archivos</h2>
+    <button onclick="loadList()">Refrescar</button>
+    <table id="datasets-table"></table>
+</section>
+
+<script src="/ui/upload.js"></script>
+<script src="/ui/list.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,19 @@
+version: 2
+
+sources:
+  - name: staging
+    schema: staging
+    tables:
+      - name: ipv_precios_vivienda
+        description: "Datos crudos del INE - Índice de Precios de Vivienda"
+        columns:
+          - name: tipo_vivienda
+            description: "General, Vivienda nueva, Vivienda segunda mano"
+          - name: comunidad
+            description: "Comunidad autónoma o Nacional"
+          - name: indicador
+            description: "Tipo de índice o variación"
+          - name: fecha
+            description: "Primer día del trimestre"
+          - name: valor
+            description: "Valor numérico del indicador"

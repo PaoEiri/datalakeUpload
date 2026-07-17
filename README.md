@@ -1,95 +1,310 @@
-# Módulo MLOps — MLflow: Tracking, Evaluación y Model Registry
+# Diseño e Implementación de un Data Warehouse para el Análisis del Mercado Inmobiliario en España
 
-Este repositorio contiene una práctica completa de MLOps basada en un caso de uso real: predecir la fuga de clientes (churn) en una empresa de telecomunicaciones. El objetivo es aplicar el ciclo de vida completo de un modelo de machine learning, desde el entrenamiento hasta la inferencia en producción, usando herramientas modernas del ecosistema MLOps.
+Trabajo Final de Máster — Arquitectura de datos end-to-end para la ingesta, almacenamiento, transformación y visualización de datos abiertos del mercado inmobiliario español.
 
-El proyecto está diseñado para ejecutarse de forma local con Docker, sin necesidad de Kubernetes ni infraestructura cloud. Todo el stack se levanta con un único comando y es fácilmente adaptable a un entorno de producción real.
+---
 
-## Tecnologías utilizadas
+## Descripción general
 
-- MLflow 3.x – Seguimiento de experimentos, evaluación de modelos y registro con aliases
-- PostgreSQL – Backend de metadatos para MLflow
-- MinIO – Almacenamiento de artefactos compatible con S3
-- Docker Compose – Orquestación local del stack completo
-- scikit-learn / XGBoost – Modelos de clasificación
-- uv – Gestión de entorno y dependencias Python
+El proyecto implementa un pipeline de datos completo que parte de ficheros de datos abiertos (CSV/JSON) publicados por organismos como el INE y los transforma en un modelo dimensional (esquema estrella) listo para su explotación analítica en Power BI.
 
-## Referencias recomendadas
+La arquitectura separa claramente las responsabilidades en capas:
 
-- Whitepaper de Google sobre el ciclo de vida del ML:  
-  https://services.google.com/fh/files/misc/practitioners_guide_to_mlops_whitepaper.pdf
+- **Ingesta**: API REST que acepta ficheros y los almacena en un object storage
+- **Catálogo**: base de datos de metadatos independiente del almacenamiento de bytes
+- **Orquestación**: flujos asíncronos que validan, extraen metadatos y transforman los datos
+- **Data Warehouse**: modelo dimensional en tres capas (staging → core → marts)
+- **Visualización**: conexión directa desde Power BI a la capa marts
 
-Durante mi doctorado, escribí dos artículos directamente relacionados con la infraestructura utilizada en esta práctica:
+---
 
-- Artículo sobre la infraestructura MLOps que sirve de base para este repositorio:  
-  https://ieeexplore.ieee.org/abstract/document/10588954/
+## Arquitectura
 
-- Artículo con un caso de uso completo en imágenes satélite, donde se automatiza el ciclo de vida de un modelo de ML:  
-  https://www.sciencedirect.com/science/article/pii/S0167739X24004631
+```
+CSV / JSON
+    │
+    ▼
+FastAPI (dataset-api)
+    ├── Valida formato y contenido
+    ├── Almacena bytes en MinIO (object storage)
+    ├── Registra metadatos en PostgreSQL (public.datasets_upload)
+    └── Dispara flujo asíncrono en Prefect
+            │
+            ▼
+        Prefect Worker
+            ├── Extrae metadatos: columnas, tipos, filas, tamaño
+            ├── Actualiza estado en catálogo (pending → validating → ready)
+            └── Carga datos limpios en staging (pandas)
+                    │
+                    ▼
+                dbt
+                    ├── staging.stg_ipv           (view)
+                    ├── core.dim_comunidad         (table)
+                    ├── core.dim_tiempo            (table)
+                    ├── core.dim_indicador         (table)
+                    ├── core.dim_tipo_vivienda     (table)
+                    └── marts.fct_precios_vivienda (table)
+                                │
+                                ▼
+                            Power BI
+```
 
-Recomiendo la lectura de ambos si te interesa profundizar en la aplicación práctica de MLOps.
+---
 
-## Estructura del repositorio
+## Stack tecnológico
 
-Cada carpeta representa una fase del ciclo de vida del modelo. El orden recomendado para explorar el proyecto es:
+| Componente | Tecnología | Rol |
+|---|---|---|
+| API REST | FastAPI + Python | Ingesta de ficheros |
+| Object storage | MinIO (S3-compatible) | Almacenamiento de bytes |
+| Base de datos | PostgreSQL 16 | Metadatos + Data Warehouse |
+| Orquestación | Prefect 3 | Flujos asíncronos |
+| Transformación | pandas | Limpieza y carga a staging |
+| Modelado | dbt (dbt-postgres) | Capas core y marts |
+| Visualización | Power BI Desktop | Dashboards analíticos |
+| Contenedores | Docker + Docker Compose | Infraestructura local |
 
-1. `infra/`  
-   Stack de infraestructura completo: PostgreSQL como backend de metadatos, MinIO como almacén de artefactos compatible con S3, y el servidor MLflow conectando ambos. Se levanta con Docker Compose en un único comando.
+---
 
-2. `src/data_prep.py`  
-   Carga y preprocesamiento del dataset: codificación de variables categóricas, split train/test y limpieza de valores nulos.
+## Estructura del proyecto
 
-3. `src/api/app.py`, `src/api/datasets.py`
-   Servicio FastAPI para subir datasets CSV/JSON, almacenar los bytes en MinIO, extraer metadatos en PostgreSQL y exponer un catálogo de datasets.
+```
+├── dbt/
+│   ├── dbt_project.yml
+│   ├── profiles.yml
+│   ├── macros/
+│   │   └── generate_schema_name.sql
+│   └── models/
+│       ├── staging/
+│       │   ├── sources.yml
+│       │   └── stg_ipv.sql
+│       ├── core/
+│       │   ├── dim_geografia.sql
+│       │   ├── dim_tiempo.sql
+│       │   ├── dim_indicador.sql
+│       │   └── dim_tipo_vivienda.sql
+│       └── marts/
+│           ├── schema.yml
+│           └── fact_precios_vivienda.sql
+├── flows/
+│   
+│   ├── 01_data_validation.py
+│   ├── 02_dbt_run.py
+│   ├── 03_staging_manual.py
+│   └── dataset_management.py
+├── infra/
+│   ├── docker-compose.yml
+│   ├── docker-compose.prefect.yml
+│   ├── docker-compose.dbt.yml
+│   ├── Dockerfile.api
+│   ├── Dockerfile.worker
+│   ├── Dockerfile.dbt
+│   ├── init-minio.sh
+│   └── docker-entrypoint-initdb.d/
+│       ├── 01_init.sql
+│       ├── 02_dw_schemas.sql
+│       └── 03_staging.sql
+└── src/
+    ├── api/
+    │   ├── app.py
+    │   ├── datasets.py
+    │   └── schemas.py
+    ├── db/
+    │   ├── database.py
+    │   ├── crud_sync.py
+    │   └── models.py
+    ├── storage/
+    ├── tasks/
+    │   ├── dbt.py
+    │   └── staging.py
+    └── config.py
+```
 
-4. `src/train.py`
-   Evaluación del modelo usando `mlflow.models.evaluate()`. Genera métricas de clasificación, curva ROC, matriz de confusión, curva precision-recall e importancia de features con SHAP, todo registrado como artefactos en MLflow.
+---
 
-5. `src/register.py`  
-   Gestión del Model Registry con el patrón champion/challenger. Registra un modelo como `@challenger`, permite comparar sus métricas frente al `@champion` actual y promoverlo si lo supera.
+## Esquema de base de datos
 
-6. `src/predict.py`  
-   Inferencia cargando siempre el modelo con el alias `@champion` desde el registry. Sin hardcodear versiones — el alias apunta automáticamente al modelo en producción.
+### Esquema `public` — catálogo de datasets
 
-7. `notebooks/01_eda.ipynb`  
-   Exploración inicial del dataset: distribuciones, correlaciones y análisis de la variable objetivo.
+```sql
+public.datasets_upload
+    id               SERIAL PRIMARY KEY
+    dataset_name     VARCHAR(255) UNIQUE   -- nombre único generado automáticamente
+    original_filename VARCHAR(255)         -- nombre original del fichero subido
+    storage_key      VARCHAR(512)          -- clave en MinIO
+    file_format      VARCHAR(50)           -- csv | json
+    content_type     VARCHAR(100)
+    size_bytes       BIGINT
+    row_count        INTEGER               -- extraído automáticamente
+    column_count     INTEGER               -- extraído automáticamente
+    schema           JSONB                 -- columnas y tipos de datos
+    preview          JSONB                 -- primeras 20 filas
+    status           VARCHAR(50)           -- pending | validating | ready | failed
+    error_message    TEXT
+    created_at       TIMESTAMP
+    updated_at       TIMESTAMP
+```
 
-## Dataset
+### Esquema `staging` — datos crudos limpios
 
-- Dataset Telco Customer Churn disponible en Kaggle:  
-  https://www.kaggle.com/datasets/blastchar/telco-customer-churn
+```sql
+staging.ipv_precios_vivienda
+    tipo_vivienda    VARCHAR(50)
+    ambito           VARCHAR(50)
+    comunidad        VARCHAR(100)
+    indicador        VARCHAR(100)
+    anio             SMALLINT
+    trimestre        SMALLINT
+    fecha            DATE                  -- primer día del trimestre
+    valor            NUMERIC(12,4)
+    fuente           VARCHAR(200)
+    cargado_en       TIMESTAMP
+```
 
-El dataset contiene 7043 registros de clientes con características como tipo de contrato, servicios contratados y cargo mensual. La variable objetivo indica si el cliente canceló el servicio. Se utiliza sin reducción ya que su tamaño es manejable para ejecución local.
+### Esquema `core` — dimensiones
 
-## Recursos de aprendizaje recomendados
+```
+dim_comunidad       -- 20 comunidades autónomas + Nacional con código INE
+dim_tiempo          -- 76 periodos trimestrales con label legible
+dim_indicador       -- tipos de índice y variación
+dim_tipo_vivienda   -- general, vivienda nueva, segunda mano
+```
 
-- Curso introductorio de Andrew Ng sobre ML en producción (Coursera, 10 horas):  
-  https://www.coursera.org/learn/introduction-to-machine-learning-in-production
+### Esquema `marts` — tabla de hechos
 
-- Especialización en MLOps de Duke University (Coursera):  
-  https://www.coursera.org/specializations/mlops-machine-learning-duke
+```
+fct_precios_vivienda  -- 18.240 filas, joins con las 4 dimensiones
+```
 
-- Curso de MLOps en Google Cloud (Coursera):  
-  https://www.coursera.org/learn/gcp-production-ml-systems
+---
 
-## Objetivo
-
-Este repositorio tiene un enfoque educativo y práctico, ideal para personas que quieran entender cómo se gestiona el ciclo de vida de un modelo de machine learning con herramientas reales. Cada componente está desacoplado y puede ejecutarse de forma independiente, lo que facilita la comprensión de cada etapa del proceso sin necesidad de infraestructura compleja.
-
-
-## Comandos prefect
-
-cd infra && docker compose -f docker-compose.yml -f docker-compose.prefect.yml build
-docker compose -f docker-compose.yml -f docker-compose.prefect.yml up -d
-
-
- docker compose -f infra/docker-compose.yml -f infra/docker-compose.prefect.yml build
-
- docker compose -f infra/docker-compose.yml -f infra/docker-compose.prefect.yml up -d
-## API de datasets_upload
-
-Una vez levantado el stack, el servicio de datasets_upload está disponible en `http://localhost:8000`.
+## Capacidades de la API
 
 - `POST /datasets_upload/upload` — subir CSV o JSON, almacenar en MinIO y programar validación asíncrona.
 - `GET /datasets_upload` — listar todos los datasets uploads disponibles y metadatos básicos.
 - `GET /datasets_upload/{dataset_id}` — obtener información detallada de un dataset upload.
-- `GET /datasets_upload/{dataset_id}/preview` — ver las primeras filas extraídas sin descargar el dataset completo.
+- `GET /datasets_upload/{dataset_id}/preview` — ver las primeras filas extraídas sin descargar el dataset 
+
+---
+
+## Separación de responsabilidades
+
+El sistema mantiene dos sistemas de almacenamiento con responsabilidades distintas:
+
+**MinIO** almacena los bytes del fichero original sin modificación. Es el data lake raw. Un fichero de 50 MB se guarda tal cual, sin procesamiento.
+
+**PostgreSQL** almacena la información *sobre* los ficheros: cuántas filas tienen, qué columnas, cuándo se subieron, si son válidos. No guarda los datos en sí.
+
+Esta separación permite consultar el catálogo (qué datasets existen, qué columnas tienen) sin leer ningún fichero, y permite regenerar las transformaciones del DW en cualquier momento relanzando los flujos de Prefect y dbt.
+
+---
+
+## Puesta en marcha
+
+### Requisitos
+
+- Docker Desktop
+- Docker Compose
+- Power BI Desktop (Windows)
+
+### Variables de entorno
+
+Copia `.env.example` a `.env` y rellena los valores:
+
+```env
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=datalake
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+MINIO_PORT=9000
+MINIO_CONSOLE_PORT=9001
+MINIO_ENDPOINT=http://minio:9000
+MINIO_SECURE=false
+DATASETS_BUCKET=datasets-upload
+
+PREFECT_API_HOST=prefect-server
+PREFECT_API_PORT=4200
+DATASET_API_PORT=8000
+
+DBT_PROJECT_DIR=/app/dbt
+DBT_PROFILES_DIR=/app/dbt
+DBT_TARGET=dev
+```
+
+### Levantar el stack
+
+```bash
+# Stack principal (API + MinIO + PostgreSQL)
+docker compose -f infra/docker-compose.yml up -d
+
+# Stack de orquestación (Prefect)
+docker compose -f infra/docker-compose.yml -f infra/docker-compose.prefect.yml up -d
+
+# Stack completo incluyendo dbt docs
+docker compose \
+  -f infra/docker-compose.yml \
+  -f infra/docker-compose.prefect.yml \
+  -f infra/docker-compose.dbt.yml \
+  --profile dbt up -d
+```
+
+### Crear esquemas del Data Warehouse (primera vez)
+
+```bash
+docker exec -it postgres psql -U $POSTGRES_USER -d $POSTGRES_DB \
+  -c "CREATE SCHEMA IF NOT EXISTS staging;
+      CREATE SCHEMA IF NOT EXISTS core;
+      CREATE SCHEMA IF NOT EXISTS marts;"
+```
+
+### Ejecutar transformaciones dbt
+
+```bash
+# Desde el contenedor dbt
+docker exec -it dbt dbt run
+
+# Desde el worker de Prefect
+docker exec -it prefect-worker python flows/03_dbt_run.py
+```
+
+---
+
+## Interfaces web
+
+| Servicio | URL |
+|---|---|
+| API REST (docs) | http://localhost:8000/docs |
+| MinIO Console | http://localhost:9001 |
+| Prefect UI | http://localhost:4200 |
+| dbt docs | http://localhost:8080 |
+
+---
+
+## Dataset de prueba
+
+**INE — Índice de Precios de Vivienda (IPV)**
+
+Fuente: Instituto Nacional de Estadística  
+Formato: CSV con separador `;` y codificación `latin-1`  
+Cobertura: series trimestrales desde 2007 por comunidad autónoma  
+Indicadores: índice base, variación trimestral, variación anual, variación acumulada  
+Filas cargadas: 18.240
+
+El pipeline completo para este dataset va de la subida del CSV a través de la API hasta la tabla `marts.fct_precios_vivienda` lista para conectar en Power BI, pasando por validación automática, extracción de metadatos, limpieza con pandas y modelado dimensional con dbt.
+
+# Para ejecutar actualizado 
+docker compose -f infra/docker-compose.yml -f infra/docker-compose.prefect.yml -f infra\docker-compose.dbt.yml build
+
+docker compose -f infra/docker-compose.yml -f infra/docker-compose.prefect.yml -f infra/docker-compose.dbt.yml --profile dbt up -d
+
+docker exec -it prefect-worker python flows/04_staging_manual.py 
+
+
+docker exec -it prefect-worker python flows/03_dbt_run.py
+
+
+

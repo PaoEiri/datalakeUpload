@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: fct_precios_vivienda
+    description: "Tabla de hechos del IPV - lista para Power BI"
+    columns:
+      - name: id_comunidad
+        description: "FK a dim_comunidad"
+      - name: id_tiempo
+        description: "FK a dim_tiempo"
+      - name: id_indicador
+        description: "FK a dim_indicador"
+      - name: id_tipo_vivienda
+        description: "FK a dim_tipo_vivienda"
+      - name: fecha
+        description: "Primer dia del trimestre"
+      - name: valor
+        description: "Valor del indice o variacion porcentual"

@@ -10,7 +10,7 @@ from src.config import settings
 from src.db.database import SessionLocal
 from src.db import crud_sync
 from src.storage.minio_client import MinioClient
-
+from src.tasks.dbt import run_dbt
 
 # ---------------------------------------------------------
 # Helpers
@@ -94,23 +94,63 @@ def set_dataset_failed(dataset_id: int, error_message: str):
 def _normalize_preview(df: pd.DataFrame) -> list:
     if df.empty:
         return []
-    return df.where(pd.notna(df), None).to_dict(orient="records")
-
+    import json
+    import math
+    records = df.where(pd.notna(df), None).to_dict(orient="records")
+    # Reemplaza float NaN/Inf que pandas no convierte a None correctamente
+    cleaned = json.loads(
+        json.dumps(records, default=lambda x: None if (isinstance(x, float) and (math.isnan(x) or math.isinf(x))) else x)
+    )
+    return cleaned
 
 def _extract_csv_metadata(bucket_name: str, object_key: str) -> dict:
     client = get_minio_client()
 
-    sample = client.get_object(object_key, bucket_name=bucket_name)["Body"]
-    df_preview = pd.read_csv(sample, nrows=20)
+    # --- Leer bytes del CSV desde MinIO ---
+    obj = client.get_object(object_key, bucket_name=bucket_name)["Body"]
+    sample_bytes = obj.read()
+
+    # --- Intentar varios encodings ---
+    encodings = ["utf-8-sig", "latin1", "cp1252"]
+    df_preview = None
+
+    for enc in encodings:
+        try:
+            df_preview = pd.read_csv(
+                io.BytesIO(sample_bytes),
+                nrows=20,
+                encoding=enc,
+                sep=";"
+            )
+            break
+        except UnicodeDecodeError:
+            continue
+
+    if df_preview is None:
+        raise UnicodeDecodeError("No se pudo decodificar el CSV con los encodings comunes.")
 
     if df_preview.shape[1] == 0:
         raise ValueError("El CSV no contiene columnas.")
 
-    schema = [{"name": str(col), "dtype": str(dtype)} for col, dtype in zip(df_preview.columns, df_preview.dtypes)]
+    # --- Schema ---
+    schema = [
+        {"name": str(col), "dtype": str(dtype)}
+        for col, dtype in zip(df_preview.columns, df_preview.dtypes)
+    ]
+
     preview = _normalize_preview(df_preview)
 
-    counter = client.get_object(object_key, bucket_name=bucket_name)["Body"]
-    row_count = sum(len(chunk) for chunk in pd.read_csv(counter, chunksize=100000))
+    # --- Contar filas de forma eficiente ---
+    counter_obj = client.get_object(object_key, bucket_name=bucket_name)["Body"]
+    row_count = 0
+
+    for chunk in pd.read_csv(
+        io.BytesIO(counter_obj.read()),
+        chunksize=100000,
+        encoding=enc,   # usar el encoding detectado
+        sep=";"
+    ):
+        row_count += len(chunk)
 
     if row_count == 0:
         raise ValueError("El CSV está vacío.")
@@ -121,7 +161,6 @@ def _extract_csv_metadata(bucket_name: str, object_key: str) -> dict:
         "schema": schema,
         "preview": preview,
     }
-
 
 def _extract_json_metadata(bucket_name: str, object_key: str) -> dict:
     client = get_minio_client()
@@ -208,7 +247,6 @@ def dataset_management_flow(dataset_id: int, bucket_name: str, object_key: str, 
             metadata["schema"],
             metadata["preview"],
         )
-
     except Exception as exc:
         set_dataset_failed(dataset_id, str(exc))
         raise

@@ -1,0 +1,105 @@
+/* ====== ESTILOS GENERALES ====== */
+body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f5f7fa;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+h1 {
+    margin-bottom: 20px;
+    font-size: 28px;
+    color: #2c3e50;
+}
+
+h2 {
+    margin-top: 30px;
+    font-size: 22px;
+    color: #34495e;
+}
+
+/* ====== CONTENEDORES ====== */
+section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* ====== BOTONES ====== */
+button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: #2980b9;
+}
+
+button:active {
+    transform: scale(0.97);
+}
+
+/* ====== INPUT FILE ====== */
+input[type="file"] {
+    padding: 8px;
+    background: #ecf0f1;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+/* ====== TABLA ====== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+th {
+    background: #3498db;
+    color: white;
+    padding: 10px;
+    text-align: left;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+tr:hover {
+    background: #f0f8ff;
+}
+
+/* ====== ESTADO (chips) ====== */
+.status {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: capitalize;
+}
+
+.status-ready {
+    background: #2ecc71;
+    color: white;
+}
+
+.status-failed {
+    background: #e74c3c;
+    color: white;
+}
+
+.status-pending {
+    background: #f1c40f;
+    color: #333;
+}

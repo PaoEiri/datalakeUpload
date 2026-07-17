@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.staticfiles import StaticFiles
 from .datasets import router as dataset_router
 from src.config import settings
 from src.storage.minio_client import MinioClient
@@ -9,7 +9,7 @@ app = FastAPI(
     title="Dataset Catalog API",
     version="0.1.0",
 )
-
+app.mount("/ui", StaticFiles(directory="src/ui"), name="ui")
 # CORS (opcional)
 app.add_middleware(
     CORSMiddleware,

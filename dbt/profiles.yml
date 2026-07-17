@@ -8,5 +8,5 @@ datalake:
       user: "{{ env_var('DBT_USER') }}"
       password: "{{ env_var('DBT_PASSWORD') }}"
       dbname: "{{ env_var('DBT_DATABASE') }}"
-      schema: staging
+      schema: public
       threads: 4

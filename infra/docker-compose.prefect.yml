@@ -23,7 +23,7 @@ services:
     environment:
       PREFECT_SERVER_DATABASE_CONNECTION_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/prefect
       PREFECT_SERVER_ANALYTICS_ENABLED: "false"
-      PREFECT_UI_API_URL: http://${PREFECT_API_HOST}:${PREFECT_API_PORT}/api
+      PREFECT_UI_API_URL: http://localhost:${PREFECT_API_PORT}/api
     ports:
       - "4200:4200"
     command: prefect server start --host 0.0.0.0
@@ -47,10 +47,17 @@ services:
       PREFECT_API_URL: http://${PREFECT_API_HOST}:${PREFECT_API_PORT}/api
       AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
       AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
-      PYTHONPATH: /app/src
+      PYTHONPATH: /app
+      DBT_HOST: ${POSTGRES_HOST}
+      DBT_PORT: ${POSTGRES_PORT}
+      DBT_USER: ${POSTGRES_USER}
+      DBT_PASSWORD: ${POSTGRES_PASSWORD}
+      DBT_DATABASE: ${POSTGRES_DB}
     volumes:
       - ..:/app
     working_dir: /app
     command: >
       bash -c "prefect work-pool create churn-process-pool --type process 2>/dev/null || true &&
                prefect worker start --pool churn-process-pool --type process"
+
+

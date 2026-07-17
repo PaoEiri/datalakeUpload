@@ -33,7 +33,17 @@ class Settings(BaseSettings):
     # API
     dataset_api_port: int = 8000
 
+    # dbt
+    dbt_project_dir: str = "/app/dbt"
+    dbt_profiles_dir: str = "/app/dbt"
+    dbt_target: str = "dev"
     model_config = ConfigDict(env_file=".env", env_file_encoding="utf-8")
+    dbt_host: str = "postgres"
+    dbt_port: int = 5432    
+    dbt_user: str = "postgres"
+    dbt_password: str = "postgres"
+    dbt_database: str = "postgres"
+
 
     @model_validator(mode="after")
     def assemble_urls(self) -> "Settings":
