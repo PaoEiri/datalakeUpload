@@ -1,20 +1,24 @@
 {{ config(materialized='table') }}
 
+-- NO marcar como "Date Table" en Power BI: mezcla granularidad trimestral
+-- (precios/transacciones) y anual (indicadores).
+WITH periodos AS (
+    SELECT DISTINCT anio, trimestre FROM {{ ref('int_precios_vivienda_unificado') }}
+    UNION
+    SELECT DISTINCT anio, trimestre FROM {{ ref('int_transacciones_unificado') }}
+    UNION
+    SELECT DISTINCT anio, CAST(NULL AS INT) AS trimestre FROM {{ ref('int_indicadores_unificado') }}
+)
+
 SELECT
-    ROW_NUMBER() OVER (ORDER BY fecha) AS id_tiempo,
-    fecha,
+    ROW_NUMBER() OVER (ORDER BY anio, trimestre NULLS FIRST) AS id_tiempo,
     anio,
     trimestre,
-    CONCAT('T', trimestre, ' ', anio)  AS label_periodo,
-    CASE trimestre
-        WHEN 1 THEN 'Enero - Marzo'
-        WHEN 2 THEN 'Abril - Junio'
-        WHEN 3 THEN 'Julio - Septiembre'
-        WHEN 4 THEN 'Octubre - Diciembre'
-    END                                AS descripcion_trimestre
-FROM (
-    SELECT DISTINCT fecha, anio, trimestre
-    FROM {{ source('staging', 'ipv_precios_vivienda') }}
-    WHERE fecha IS NOT NULL
-) t
-ORDER BY fecha
+    CASE WHEN trimestre IS NULL THEN 'Anual' ELSE 'Trimestral' END AS granularidad,
+    CASE
+        WHEN trimestre IS NULL THEN MAKE_DATE(anio, 1, 1)
+        ELSE MAKE_DATE(anio, CASE trimestre WHEN 1 THEN 1 WHEN 2 THEN 4 WHEN 3 THEN 7 WHEN 4 THEN 10 END, 1)
+    END AS fecha
+FROM periodos
+WHERE anio IS NOT NULL
+ORDER BY anio, trimestre NULLS FIRST

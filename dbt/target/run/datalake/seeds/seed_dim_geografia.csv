@@ -1,0 +1,14 @@
+
+    
+    
+    
+    create table "postgres"."seeds"."seed_dim_geografia" ("id_geografia" integer,"nombre" text,"codigo_ine" varchar(10),"es_codigo_oficial_ine" boolean,"nivel" text,"nivel_orden" integer,"codigo_municipio" integer,"codigo_provincia" integer,"codigo_ccaa" integer,"codigo_pais" integer)
+  ;
+    -- dbt seed --
+    
+          insert into "postgres"."seeds"."seed_dim_geografia" ("id_geografia", "nombre", "codigo_ine", "es_codigo_oficial_ine", "nivel", "nivel_orden", "codigo_municipio", "codigo_provincia", "codigo_ccaa", "codigo_pais") values
+          (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+      
+
+;
+  

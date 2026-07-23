@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: dim_geografia
+    description: "Dimensión de geografía (15 filas: 11 distritos, Málaga municipio, Málaga provincia, Andalucía, España)"
+    columns:
+      - name: id_geografia
+        tests: [not_null, unique]
+      - name: nombre
+        tests: [not_null]
+      - name: nivel
+        tests:
+          - accepted_values:
+              values: ['Distrito', 'Municipio', 'Provincia', 'Comunidad Autónoma', 'País']
+
+  - name: dim_tiempo
+    description: "Dimensión de tiempo, granularidad trimestral (precios/transacciones) y anual (indicadores). NO usar como Date Table en Power BI"
+    columns:
+      - name: id_tiempo
+        tests: [not_null, unique]
+      - name: anio
+        tests: [not_null]
+      - name: granularidad
+        tests:
+          - accepted_values:
+              values: ['Trimestral', 'Anual']
+
+  - name: dim_tipo_vivienda
+    description: "4 tipos atómicos de vivienda para transacciones inmobiliarias (sin fila 'total')"
+    columns:
+      - name: id_tipo_vivienda
+        tests: [not_null, unique]
+      - name: nombre_tipo
+        tests:
+          - not_null
+          - unique
+          - accepted_values:
+              values: ['libre', 'segunda mano', 'nueva', 'protegida']
+
+  - name: dim_indicador
+    description: "32 indicadores socioeconómicos del INE, colapsados por concepto_id desde seed_indicadores_fuentes (37 filas)"
+    columns:
+      - name: id_indicador
+        tests: [not_null, unique]
+      - name: nombre_indicador
+        tests: [not_null]

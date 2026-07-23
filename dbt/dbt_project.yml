@@ -3,11 +3,16 @@ version: '1.0.0'
 profile: datalake
 
 model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
 
 models:
   datalake:
     staging:
       +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
       +materialized: view
     core:
       +schema: core
@@ -15,3 +20,9 @@ models:
     marts:
       +schema: marts
       +materialized: table
+
+# dbt/seeds/ queda vacío a propósito: dim_geografia, seed_geografia_tinsa y
+# seed_indicadores_fuentes se migraron a tablas normales en el esquema
+# `reference` tras la carga inicial (ver dbt/reference_migration/README.md).
+# Un `dbt seed` recurrente haría full-refresh y borraría cualquier edición
+# manual hecha directamente en Postgres.

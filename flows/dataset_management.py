@@ -11,6 +11,8 @@ from src.db.database import SessionLocal
 from src.db import crud_sync
 from src.storage.minio_client import MinioClient
 from src.tasks.dbt import run_dbt
+from src.tasks.staging_fuentes import cargar_fuente_a_staging
+from src.tasks.dbt import run_dbt
 
 # ---------------------------------------------------------
 # Helpers
@@ -86,6 +88,33 @@ def set_dataset_failed(dataset_id: int, error_message: str):
             status="failed",
             error_message=error_message,
         )
+
+
+@task
+def marcar_dataset_no_vigente(dataset_id: int):
+    with SessionLocal() as db:
+        crud_sync.set_dataset_vigente(db, dataset_id, False)
+
+
+@task
+def marcar_vigencia_fuente(id_fuente: int, dataset_id: int):
+    with SessionLocal() as db:
+        crud_sync.marcar_dataset_vigente(db, id_fuente, dataset_id)
+
+
+@task
+def cargar_staging_fuente(id_fuente: int, bucket_name: str, object_key: str) -> tuple[str, int]:
+    """Descarga el archivo vigente de MinIO y lo carga a staging.<tabla>
+    según el codigo_fuente de la fuente registrada."""
+    with SessionLocal() as db:
+        fuente = crud_sync.get_fuente(db, id_fuente)
+    if fuente is None:
+        raise ValueError(f"Fuente {id_fuente} no encontrada")
+
+    client = get_minio_client()
+    file_bytes = client.get_object(object_key, bucket_name=bucket_name)["Body"].read()
+    filas = cargar_fuente_a_staging(fuente.codigo_fuente, file_bytes)
+    return fuente.stg_modelo_destino, filas
 
 
 # ---------------------------------------------------------
@@ -205,7 +234,9 @@ def extract_metadata(bucket_name: str, object_key: str, file_format: str) -> dic
 # FLOWS (SYNC)
 # ---------------------------------------------------------
 @flow(name="dataset-upload", log_prints=True)
-def dataset_upload_flow(file_bytes: bytes, filename: str, content_type: str) -> int:
+def dataset_upload_flow(
+    file_bytes: bytes, filename: str, content_type: str, id_fuente: int | None = None
+) -> int:
     logger = get_run_logger()
     logger.info(f"Starting upload for: {filename}")
 
@@ -225,13 +256,24 @@ def dataset_upload_flow(file_bytes: bytes, filename: str, content_type: str) -> 
         bucket_name=settings.datasets_bucket,
         object_key=storage_key,
         file_format=file_format,
+        id_fuente=id_fuente,
     )
 
     return dataset_id
 
 
 @flow(name="dataset-management")
-def dataset_management_flow(dataset_id: int, bucket_name: str, object_key: str, file_format: str):
+def dataset_management_flow(
+    dataset_id: int,
+    bucket_name: str,
+    object_key: str,
+    file_format: str,
+    id_fuente: int | None = None,
+):
+    """Flow 1: valida el archivo y, si viene vinculado a una fuente
+    catalogada (id_fuente), aplica la lógica de vigencia y encadena la
+    carga a staging (Flow 2) + dbt run acotado (Flow 3). Ver
+    fuentes_registradas_y_api.md y consideraciones_prefect_flows.md."""
     logger = get_run_logger()
     logger.info(f"Validating dataset: {object_key}")
 
@@ -247,6 +289,19 @@ def dataset_management_flow(dataset_id: int, bucket_name: str, object_key: str, 
             metadata["schema"],
             metadata["preview"],
         )
+
+        if id_fuente is not None:
+            # Orden importante: solo se marca vigente el dataset DESPUÉS de
+            # que staging + dbt run hayan terminado con éxito. Si se marcara
+            # antes y alguno de esos pasos fallara, fuentes_registradas
+            # quedaría apuntando a un dataset cuyo staging nunca se cargó.
+            stg_modelo_destino, filas = cargar_staging_fuente(id_fuente, bucket_name, object_key)
+            logger.info(f"Cargadas {filas} filas en staging para {stg_modelo_destino}")
+            run_dbt(select=f"{stg_modelo_destino}+")
+            marcar_vigencia_fuente(id_fuente, dataset_id)
+
     except Exception as exc:
         set_dataset_failed(dataset_id, str(exc))
+        if id_fuente is not None:
+            marcar_dataset_no_vigente(dataset_id)
         raise

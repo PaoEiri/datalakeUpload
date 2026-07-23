@@ -19,6 +19,9 @@ dependencies = [
     "scikit-learn>=1.8.0",
     "shap>=0.46",
     "xgboost>=3.2.0",
+    "xlrd>=2.0.1",
+    "openpyxl>=3.1.0",
+    "dbt-postgres==1.9.*",
 
     # API
     "fastapi>=0.110.0",

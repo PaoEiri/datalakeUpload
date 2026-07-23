@@ -8,5 +8,7 @@ RUN pip install --no-cache-dir \
     pyyaml \
     boto3 \
     requests \
+    openpyxl \
+    xlrd \
     dbt-postgres==1.9.* \
     && pip cache purge

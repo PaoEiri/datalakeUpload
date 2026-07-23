@@ -9,7 +9,19 @@ urls = [
     "https://www.tinsa.es/precio-vivienda/andalucia/",
     "https://www.tinsa.es/precio-vivienda/andalucia/malaga/",
     "https://www.tinsa.es/precio-vivienda/andalucia/malaga/malaga/",
-    "https://www.tinsa.es/precio-vivienda/"
+    "https://www.tinsa.es/precio-vivienda/",
+    "https://www.tinsa.es/precio-vivienda/andalucia/malaga/malaga/bailen-miraflores/",
+    "https://www.tinsa.es/precio-vivienda/andalucia/malaga/malaga/campanillas/",
+    "https://www.tinsa.es/precio-vivienda/andalucia/malaga/malaga/carretera-de-cadiz/",
+    "https://www.tinsa.es/precio-vivienda/andalucia/malaga/malaga/centro/",
+    "https://www.tinsa.es/precio-vivienda/andalucia/malaga/malaga/churriana/",
+    "https://www.tinsa.es/precio-vivienda/andalucia/malaga/malaga/ciudad-jardin/",
+    "https://www.tinsa.es/precio-vivienda/andalucia/malaga/malaga/cruz-de-humilladero/",
+    "https://www.tinsa.es/precio-vivienda/andalucia/malaga/malaga/este/",
+    "https://www.tinsa.es/precio-vivienda/andalucia/malaga/malaga/palma-palmilla/",
+    "https://www.tinsa.es/precio-vivienda/andalucia/malaga/malaga/puerto-de-la-torre/",
+    "https://www.tinsa.es/precio-vivienda/andalucia/malaga/malaga/teatinos-universidad/"
+
 ]
 
 # -------------------------------
@@ -19,7 +31,7 @@ def scrape_tinsa(url):
     html = requests.get(url).text
 
     # Buscar el bloque del gráfico principal (precio €/m²)
-    pattern = r"var options = ({[\s\S]*?});\s*var chart = new ApexCharts\(document\.querySelector\(\"#grafica-imie-evolucion-precio-vivienda\""
+    pattern = r"var options = ({[\s\S]*?});\s*var chart = new ApexCharts\(document\.querySelector\(\"#grafica-imie-evolucion-precio-vivienda\"" 
     match = re.search(pattern, html)
 
     if not match:
@@ -69,6 +81,6 @@ df_final = pd.concat(dfs, ignore_index=True)
 # -------------------------------
 # EXPORTAR A CSV
 # -------------------------------
-df_final.to_csv("tinsa_malaga_andalucia.csv", index=False, encoding="utf-8-sig")
+df_final.to_csv("dataset/tinsa_malaga_andalucia.csv", index=False, encoding="utf-8-sig")
 
 print("CSV generado: tinsa_malaga_andalucia.csv")

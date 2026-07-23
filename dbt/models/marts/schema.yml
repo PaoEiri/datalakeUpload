@@ -1,18 +1,68 @@
 version: 2
 
 models:
-  - name: fct_precios_vivienda
-    description: "Tabla de hechos del IPV - lista para Power BI"
+  - name: fact_precio_vivienda
+    description: "Precio €/m² (Tinsa) por tiempo y geografía - lista para Power BI"
     columns:
-      - name: id_comunidad
-        description: "FK a dim_comunidad"
       - name: id_tiempo
-        description: "FK a dim_tiempo"
-      - name: id_indicador
-        description: "FK a dim_indicador"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_tiempo')
+              field: id_tiempo
+      - name: id_geografia
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_geografia')
+              field: id_geografia
+      - name: precio_m2
+        description: "Precio medio €/m²"
+
+  - name: fact_transacciones_inmobiliarias
+    description: "Número de transacciones inmobiliarias por tiempo, geografía (municipio) y tipo de vivienda - lista para Power BI"
+    columns:
+      - name: id_tiempo
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_tiempo')
+              field: id_tiempo
+      - name: id_geografia
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_geografia')
+              field: id_geografia
       - name: id_tipo_vivienda
-        description: "FK a dim_tipo_vivienda"
-      - name: fecha
-        description: "Primer dia del trimestre"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_tipo_vivienda')
+              field: id_tipo_vivienda
+      - name: num_transacciones
+        description: "Número de transacciones inmobiliarias"
+
+  - name: fact_indicadores_anuales
+    description: "Indicadores socioeconómicos del INE por tiempo (anual), geografía e indicador - lista para Power BI"
+    columns:
+      - name: id_tiempo
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_tiempo')
+              field: id_tiempo
+      - name: id_geografia
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_geografia')
+              field: id_geografia
+      - name: id_indicador
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_indicador')
+              field: id_indicador
       - name: valor
-        description: "Valor del indice o variacion porcentual"
+        description: "Valor del indicador"

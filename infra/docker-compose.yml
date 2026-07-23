@@ -72,6 +72,12 @@ services:
       MINIO_SECURE: ${MINIO_SECURE}
       DATASETS_BUCKET: ${DATASETS_BUCKET}
       PREFECT_API_URL: http://${PREFECT_API_HOST}:${PREFECT_API_PORT}/api
+      DBT_HOST: ${POSTGRES_HOST}
+      DBT_PORT: ${POSTGRES_PORT}
+      DBT_USER: ${POSTGRES_USER}
+      DBT_PASSWORD: ${POSTGRES_PASSWORD}
+      DBT_DATABASE: ${POSTGRES_DB}
+      DBT_SCHEMA: staging
     ports:
       - "${DATASET_API_PORT:-8000}:8000"
     working_dir: /app

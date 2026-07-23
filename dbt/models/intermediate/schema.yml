@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: int_precios_vivienda_unificado
+    description: "Precios €/m² de Tinsa con id_geografia resuelto vía seed_geografia_tinsa (join por slug de URL, nunca por texto de zona)"
+    columns:
+      - name: id_geografia
+        tests: [not_null]
+      - name: anio
+        tests: [not_null]
+      - name: trimestre
+        tests: [not_null]
+      - name: precio_m2
+        tests: [not_null]
+
+  - name: int_transacciones_unificado
+    description: "Unión de los 4 tipos de vivienda con id_geografia resuelto (hoy solo Málaga municipio)"
+    columns:
+      - name: id_geografia
+        tests: [not_null]
+      - name: tipo_vivienda
+        tests:
+          - accepted_values:
+              values: ['libre', 'segunda mano', 'nueva', 'protegida']
+      - name: num_transacciones
+        tests: [not_null]
+
+  - name: int_indicadores_unificado
+    description: "Unión de los 8 indicadores INE con id_indicador canónico resuelto (colapsa duplicados multi-fuente) y filtro aplica_municipal/aplica_distrital aplicado"
+    columns:
+      - name: nivel_geografico
+        tests:
+          - accepted_values:
+              values: ['MUNICIPIO', 'DISTRITO']
+      - name: anio
+        tests: [not_null]
+      - name: id_indicador
+        tests: [not_null]
+      - name: valor
+        tests: [not_null]

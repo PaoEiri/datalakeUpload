@@ -1,0 +1,128 @@
+version: 2
+
+models:
+  - name: stg_precios_tinsa
+    description: "Precio €/m² (Tinsa), todos los niveles, con anio/trimestre separados y slug derivado de la URL"
+    columns:
+      - name: anio
+        tests: [not_null]
+      - name: trimestre
+        tests: [not_null]
+      - name: precio_m2
+        tests: [not_null]
+      - name: slug_tinsa
+        tests: [not_null]
+
+  - name: stg_indicadores_renta_persona_hogar
+    description: "Normalizado de la tabla INE 31106 (renta media/mediana)"
+    columns:
+      - name: nivel_geografico
+        tests:
+          - accepted_values:
+              values: ['MUNICIPIO', 'DISTRITO']
+      - name: anio
+        tests: [not_null]
+      - name: valor
+        tests: [not_null]
+
+  - name: stg_indicadores_demograficos
+    description: "Normalizado de la tabla INE 31114 (indicadores demográficos)"
+    columns:
+      - name: nivel_geografico
+        tests:
+          - accepted_values:
+              values: ['MUNICIPIO', 'DISTRITO']
+      - name: anio
+        tests: [not_null]
+      - name: valor
+        tests: [not_null]
+
+  - name: stg_indicadores_fuente_ingreso
+    description: "Normalizado de la tabla INE 31107 (distribución por fuente de ingresos)"
+    columns:
+      - name: nivel_geografico
+        tests:
+          - accepted_values:
+              values: ['MUNICIPIO', 'DISTRITO']
+      - name: anio
+        tests: [not_null]
+
+  - name: stg_indicadores_gini_p80p20
+    description: "Normalizado de la tabla INE 37706 (Gini y P80/P20, escala 0-100 sin normalizar)"
+    columns:
+      - name: nivel_geografico
+        tests:
+          - accepted_values:
+              values: ['MUNICIPIO', 'DISTRITO']
+      - name: anio
+        tests: [not_null]
+
+  - name: stg_poblacion_sexo
+    description: "Normalizado de la tabla INE 2882 (población por sexo, municipal)"
+    columns:
+      - name: nombre_indicador
+        tests:
+          - accepted_values:
+              values: ['Total', 'Hombres', 'Mujeres']
+      - name: anio
+        tests: [not_null]
+      - name: valor
+        tests: [not_null]
+
+  - name: stg_indicadores_malaga
+    description: "Normalizado de la tabla INE 69303 (indicadores socioeconómicos varios, municipal)"
+    columns:
+      - name: anio
+        tests: [not_null]
+
+  - name: stg_indicadores_demograficos_actualizado
+    description: "Normalizado de la tabla INE 69301 (demográficos actualizados, histórico largo, municipal)"
+    columns:
+      - name: anio
+        tests: [not_null]
+
+  - name: stg_indicadores_turismo
+    description: "Normalizado de la tabla INE 69307 (indicadores turísticos, municipal)"
+    columns:
+      - name: anio
+        tests: [not_null]
+
+  - name: stg_transacciones_libre
+    description: "Transacciones de vivienda libre, municipio de Málaga"
+    columns:
+      - name: tipo_vivienda
+        tests:
+          - accepted_values:
+              values: ['libre']
+      - name: num_transacciones
+        tests: [not_null]
+
+  - name: stg_transacciones_segunda_mano
+    description: "Transacciones de vivienda de segunda mano, municipio de Málaga"
+    columns:
+      - name: tipo_vivienda
+        tests:
+          - accepted_values:
+              values: ['segunda mano']
+      - name: num_transacciones
+        tests: [not_null]
+
+  - name: stg_transacciones_nueva
+    description: "Transacciones de vivienda nueva, municipio de Málaga"
+    columns:
+      - name: tipo_vivienda
+        tests:
+          - accepted_values:
+              values: ['nueva']
+      - name: num_transacciones
+        tests: [not_null]
+
+  - name: stg_transacciones_protegida
+    description: "Transacciones de vivienda protegida, municipio de Málaga"
+    columns:
+      - name: tipo_vivienda
+        tests:
+          - accepted_values:
+              values: ['protegida']
+      - name: num_transacciones
+        tests: [not_null]

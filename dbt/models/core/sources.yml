@@ -1,0 +1,42 @@
+version: 2
+
+sources:
+  - name: reference
+    schema: reference
+    description: "Datos de referencia curados a mano, cargados una única vez (ya no son dbt seed recurrente). Ver dbt/reference_migration/README.md"
+    tables:
+      - name: dim_geografia
+        description: "15 filas: 11 distritos, Málaga municipio, Málaga provincia, Andalucía, España"
+        columns:
+          - name: id_geografia
+          - name: nombre
+          - name: codigo_ine
+          - name: es_codigo_oficial_ine
+          - name: nivel
+          - name: nivel_orden
+          - name: codigo_municipio
+          - name: codigo_provincia
+          - name: codigo_ccaa
+          - name: codigo_pais
+
+      - name: seed_geografia_tinsa
+        description: "15 filas: mapeo slug de URL Tinsa -> id_geografia"
+        columns:
+          - name: slug_tinsa
+          - name: id_geografia
+
+      - name: seed_indicadores_fuentes
+        description: "37 filas: metadatos de carga (curaduría aplica_municipal/aplica_distrital, concepto_id)"
+        columns:
+          - name: indicador_id
+          - name: descripcion
+          - name: nombre_indicador
+          - name: categoria_indicador
+          - name: unidad
+          - name: aplica_municipal
+          - name: aplica_distrital
+          - name: es_indice_porcentaje
+          - name: tipo_indicador
+          - name: codigo_ine
+          - name: link_fuente
+          - name: concepto_id

@@ -1,9 +1,12 @@
 import os
+from typing import Optional
+
 from fastapi import (
     APIRouter,
     BackgroundTasks,
     Depends,
     File,
+    Form,
     HTTPException,
     UploadFile,
     status,
@@ -48,7 +51,9 @@ def get_db():
         db.close()
 
 
-def trigger_upload_flow(file_bytes: bytes, filename: str, content_type: str) -> None:
+def trigger_upload_flow(
+    file_bytes: bytes, filename: str, content_type: str, id_fuente: Optional[int] = None
+) -> None:
     """Ejecuta el flow de Prefect en un worker thread."""
     from flows.dataset_management import dataset_upload_flow
     import anyio
@@ -59,6 +64,7 @@ def trigger_upload_flow(file_bytes: bytes, filename: str, content_type: str) -> 
             file_bytes,
             filename,
             content_type,
+            id_fuente,
         )
     )
 
@@ -69,6 +75,7 @@ def trigger_upload_flow(file_bytes: bytes, filename: str, content_type: str) -> 
 @router.post("/upload", response_model=DatasetCreateResponse, status_code=status.HTTP_202_ACCEPTED)
 async def upload_dataset(
     file: UploadFile = File(...),
+    id_fuente: Optional[int] = Form(None),
     background_tasks: BackgroundTasks = None,
     db=Depends(get_db),
 ) -> DatasetCreateResponse:
@@ -89,16 +96,23 @@ async def upload_dataset(
             detail="El archivo no puede estar vacío.",
         )
 
+    if id_fuente is not None and crud_sync.get_fuente(db, id_fuente) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Fuente {id_fuente} no encontrada en fuentes_registradas.",
+        )
+
     content_type = file.content_type or "application/octet-stream"
 
     # Ejecutar el flow en background
-    background_tasks.add_task(trigger_upload_flow, file_bytes, filename, content_type)
+    background_tasks.add_task(trigger_upload_flow, file_bytes, filename, content_type, id_fuente)
 
     return DatasetCreateResponse(
         id=0,
         dataset_name=filename,
         status="pending",
         message="Carga aceptada. El archivo se está procesando de forma asincrónica.",
+        id_fuente=id_fuente,
     )
 
 

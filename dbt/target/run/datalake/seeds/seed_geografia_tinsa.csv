@@ -1,0 +1,14 @@
+
+    
+    
+    
+    create table "postgres"."seeds"."seed_geografia_tinsa" ("slug_tinsa" varchar(100),"id_geografia" integer)
+  ;
+    -- dbt seed --
+    
+          insert into "postgres"."seeds"."seed_geografia_tinsa" ("slug_tinsa", "id_geografia") values
+          (%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s)
+      
+
+;
+  

@@ -4,16 +4,121 @@ sources:
   - name: staging
     schema: staging
     tables:
-      - name: ipv_precios_vivienda
-        description: "Datos crudos del INE - Índice de Precios de Vivienda"
+      - name: tinsa_precios
+        description: "Precio €/m² (Tinsa), todos los niveles geográficos (país/CCAA/provincia/municipio/distrito), identificados por URL"
         columns:
-          - name: tipo_vivienda
-            description: "General, Vivienda nueva, Vivienda segunda mano"
-          - name: comunidad
-            description: "Comunidad autónoma o Nacional"
-          - name: indicador
-            description: "Tipo de índice o variación"
-          - name: fecha
-            description: "Primer día del trimestre"
+          - name: zona
+            description: "Nombre de la zona (ambiguo, NO usar para geografía — ver url)"
+          - name: periodo
+            description: "Formato 'YYYY QT', ej. '2021 4T'"
           - name: valor
-            description: "Valor numérico del indicador"
+            description: "Precio €/m², ya en formato numérico estándar (punto decimal)"
+          - name: url
+            description: "URL completa de scraping; el slug tras /precio-vivienda/ identifica la geografía vía seed_geografia_tinsa"
+
+      - name: ine_renta_persona_hogar
+        description: "INE tabla 31106 — Renta neta media por persona y por hogar, municipal y distrital de Málaga"
+        columns:
+          - name: Municipios
+          - name: Distritos
+          - name: Secciones
+          - name: "Indicadores de renta media y mediana"
+          - name: Periodo
+          - name: Total
+
+      - name: ine_demograficos
+        description: "INE tabla 31114 — Indicadores demográficos, municipal y distrital de Málaga"
+        columns:
+          - name: Municipios
+          - name: Distritos
+          - name: Secciones
+          - name: "Indicadores demograficos"
+          - name: Periodo
+          - name: Total
+
+      - name: ine_fuente_ingreso
+        description: "INE tabla 31107 — Distribución por fuente de ingresos, municipal y distrital de Málaga"
+        columns:
+          - name: Municipios
+          - name: Distritos
+          - name: Secciones
+          - name: "Distribucion por fuente de ingresos"
+          - name: Periodo
+          - name: valor_porcentaje
+            description: "Columna original '% distribucion de fuentes de ingreso'"
+
+      - name: ine_gini_p80p20
+        description: "INE tabla 37706 — Índice de Gini y distribución de la renta P80/P20, municipal y distrital de Málaga"
+        columns:
+          - name: Municipios
+          - name: Distritos
+          - name: Secciones
+          - name: "Indice de Gini y Distribucion de la renta P80/P20"
+          - name: Periodo
+          - name: Total
+
+      - name: ine_poblacion_sexo
+        description: "INE tabla 2882 — Población por sexo, municipal de Málaga (sin distrito/sección)"
+        columns:
+          - name: Municipios
+          - name: Sexo
+            description: "Total, Hombres o Mujeres"
+          - name: Periodo
+          - name: Total
+
+      - name: ine_indicadores_malaga
+        description: "INE tabla 69303 — Indicadores socioeconómicos varios, municipal de Málaga (texto plano, sin código INE)"
+        columns:
+          - name: Municipios
+          - name: Indicadores
+          - name: Periodo
+          - name: Total
+
+      - name: ine_demograficos_actualizado
+        description: "INE tabla 69301 — Indicadores demográficos actualizados (histórico más largo), municipal de Málaga, filtrado a Sexo=Total"
+        columns:
+          - name: Municipios
+          - name: Indicadores
+          - name: Sexo
+          - name: Periodo
+          - name: Total
+
+      - name: ine_turismo
+        description: "INE tabla 69307 — Indicadores turísticos, municipal de Málaga"
+        columns:
+          - name: Municipios
+          - name: Indicadores
+          - name: Periodo
+          - name: Total
+
+      - name: transacciones_libre
+        description: "Transacciones inmobiliarias de vivienda libre, municipio de Málaga (Ministerio de Transportes y Movilidad Sostenible)"
+        columns:
+          - name: municipio
+          - name: anio
+          - name: trimestre
+          - name: num_transacciones
+
+      - name: transacciones_segunda_mano
+        description: "Transacciones inmobiliarias de vivienda de segunda mano, municipio de Málaga"
+        columns:
+          - name: municipio
+          - name: anio
+          - name: trimestre
+          - name: num_transacciones
+
+      - name: transacciones_nueva
+        description: "Transacciones inmobiliarias de vivienda nueva, municipio de Málaga"
+        columns:
+          - name: municipio
+          - name: anio
+          - name: trimestre
+          - name: num_transacciones
+
+      - name: transacciones_protegida
+        description: "Transacciones inmobiliarias de vivienda protegida, municipio de Málaga"
+        columns:
+          - name: municipio
+          - name: anio
+          - name: trimestre
+          - name: num_transacciones
