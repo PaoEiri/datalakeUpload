@@ -84,7 +84,7 @@ proyecto_dbt/
     └── validacion_hombres_mujeres_total.sql   # query de apoyo para el test de calidad
 ```
 
-## Notas para Claude Code al regenerar
+## Notas 
 
 1. **Eliminar del proyecto anterior**: `dim_distritos.sql`, cualquier
    `stg_ventasinmuebles*` o modelo que use el campo de texto `zona` en lugar

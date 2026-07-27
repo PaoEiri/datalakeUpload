@@ -2,9 +2,7 @@
 
 Este documento consolida TODAS las reglas de estructura, filtrado y limpieza
 acordadas para las fuentes de datos del proyecto. Es la referencia única para
-generar/actualizar los modelos `staging/` de dbt. No inventar columnas ni
-reglas no descritas aquí — si algo no está cubierto, preguntar antes de
-asumir.
+generar/actualizar los modelos `staging/` de dbt. 
 
 ---
 

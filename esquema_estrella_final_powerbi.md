@@ -1,7 +1,7 @@
 # Esquema en estrella final — modelo semántico Power BI
 
 Este es el diseño definitivo, resultado de toda la sesión de rediseño. Es lo
-que debe reflejar el modelo de datos de Power BI una vez Claude Code termine
+que debe reflejar el modelo de datos de Power BI 
 de regenerar el proyecto dbt.
 
 ## Dimensiones

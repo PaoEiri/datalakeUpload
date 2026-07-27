@@ -1,9 +1,5 @@
 # Catálogo de fuentes registradas + actualización de archivos existentes
 
-Complementa el README actual del proyecto. Resuelve dos huecos: (1) los 3
-seeds curados a mano no deben tratarse como `dbt seed` recurrente, y (2) no
-existe forma de saber que un archivo recién subido es la actualización de
-una fuente ya conocida (ej. una nueva versión de `69303.csv`).
 
 ---
 
