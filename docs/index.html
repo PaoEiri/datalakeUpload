@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Análisis del Mercado Inmobiliario en Málaga · TFM</title>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        background: #f7f7f5;
+        color: #1D3557;
+        font-family: "Segoe UI", Calibri, Arial, sans-serif;
+    }
+
+    header {
+        background: #1D3557;
+        color: #ffffff;
+        padding: 32px 24px;
+        text-align: center;
+    }
+
+    header h1 {
+        margin: 0 0 8px;
+        font-size: clamp(22px, 4vw, 32px);
+        font-weight: 600;
+    }
+
+    header p {
+        margin: 0;
+        font-size: 15px;
+        color: #cdd8e6;
+    }
+
+    main {
+        max-width: 1280px;
+        margin: 40px auto;
+        padding: 0 24px;
+    }
+
+    .dashboard-frame {
+        width: 100%;
+        max-width: 1280px;
+        aspect-ratio: 16 / 9;
+        margin: 0 auto;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 18px rgba(29, 53, 87, 0.15);
+        background: #ffffff;
+    }
+
+    .dashboard-frame iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+    }
+
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 24px;
+        font-size: 14px;
+    }
+
+    .back-link a {
+        color: #1D3557;
+        text-decoration: none;
+        border-bottom: 1px solid #1D3557;
+        padding-bottom: 1px;
+    }
+
+    .back-link a:hover {
+        opacity: 0.75;
+    }
+
+    footer {
+        text-align: center;
+        padding: 24px;
+        font-size: 13px;
+        color: #5a6b7d;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Análisis del Mercado Inmobiliario en Málaga</h1>
+    <p>Trabajo Fin de Máster · Relación entre indicadores socioeconómicos y precio de la vivienda</p>
+</header>
+
+<main>
+    <div class="dashboard-frame">
+        <iframe title="informe TFM"
+                src="https://app.powerbi.com/view?r=eyJrIjoiYmIwZmM5MjgtYzA3Mi00ZWQ5LWJlZTgtOTdlNDQxYWEyNTBjIiwidCI6ImU3ZjUzZjNmLTYzNmItNDNhZC04MDdlLTU3Yzk2NmZmN2RiOCIsImMiOjh9"
+                frameborder="0"
+                allowFullScreen="true"></iframe>
+    </div>
+    <p class="back-link"><a href="https://github.com/PaoEiri/datalakeUpload#readme">← Ver repositorio del proyecto</a></p>
+</main>
+
+<footer>
+    Fuentes: INE · Ministerio de Transportes y Movilidad Sostenible · Tinsa
+</footer>
+
+</body>
+</html>

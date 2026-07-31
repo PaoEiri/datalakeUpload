@@ -2,6 +2,8 @@
 
 Trabajo Final de Máster — Arquitectura de datos end-to-end para la ingesta, almacenamiento, transformación y visualización de datos abiertos del mercado inmobiliario español.
 
+**Dashboard interactivo**: https://paoeiri.github.io/datalakeUpload/
+
 ---
 
 ## Descripción general
