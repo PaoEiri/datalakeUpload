@@ -25,8 +25,8 @@ models:
       - name: valor
         tests: [not_null]
 
-  - name: stg_indicadores_demograficos
-    description: "Normalizado de la tabla INE 31114 (indicadores demográficos)"
+  - name: stg_indicadores_demograficos_ambos
+    description: "Normalizado de la tabla INE 31114 (indicadores demográficos, municipal y distrital)"
     columns:
       - name: nivel_geografico
         tests:
@@ -67,7 +67,13 @@ models:
       - name: anio
         tests: [not_null]
       - name: valor
-        tests: [not_null]
+        tests:
+          - not_null:
+              # Algunos años quedan sin publicar todavía en la fuente INE
+              # (ej. 1997) — int_indicadores_unificado.sql ya filtra estos
+              # huecos antes de llegar a marts, así que aquí es solo aviso.
+              config:
+                severity: warn
 
   - name: stg_indicadores_malaga
     description: "Normalizado de la tabla INE 69303 (indicadores socioeconómicos varios, municipal)"
@@ -75,8 +81,8 @@ models:
       - name: anio
         tests: [not_null]
 
-  - name: stg_indicadores_demograficos_actualizado
-    description: "Normalizado de la tabla INE 69301 (demográficos actualizados, histórico largo, municipal)"
+  - name: stg_indicadores_demograficos_municipio
+    description: "Normalizado de la tabla INE 69301 (demográficos actualizados, histórico largo, solo municipal)"
     columns:
       - name: anio
         tests: [not_null]

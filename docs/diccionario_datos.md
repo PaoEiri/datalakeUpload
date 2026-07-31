@@ -4,9 +4,9 @@ Generado automáticamente a partir de `dbt/target/manifest.json` y `dbt/target/c
 
 ## Staging
 
-### `staging.stg_indicadores_demograficos` (view)
+### `staging.stg_indicadores_demograficos_ambos` (view)
 
-Normalizado de la tabla INE 31114 (indicadores demográficos)
+Normalizado de la tabla INE 31114 (indicadores demográficos, municipal y distrital)
 
 | Columna | Tipo | Descripción |
 |---|---|---|
@@ -17,9 +17,9 @@ Normalizado de la tabla INE 31114 (indicadores demográficos)
 | `geografia_codigo_ine` | text | - |
 | `nombre_indicador` | character varying(200) | - |
 
-### `staging.stg_indicadores_demograficos_actualizado` (view)
+### `staging.stg_indicadores_demograficos_municipio` (view)
 
-Normalizado de la tabla INE 69301 (demográficos actualizados, histórico largo, municipal)
+Normalizado de la tabla INE 69301 (demográficos actualizados, histórico largo, solo municipal)
 
 | Columna | Tipo | Descripción |
 |---|---|---|
@@ -272,9 +272,6 @@ Indicadores socioeconómicos del INE por tiempo (anual), geografía e indicador 
 | `id_geografia` | integer | - |
 | `id_indicador` | integer | - |
 | `valor` | numeric(18,4) | Valor del indicador |
-| `anio` | integer | - |
-| `geografia_nombre` | text | - |
-| `nombre_indicador` | text | - |
 
 ### `marts.fact_precio_vivienda` (table)
 
@@ -285,11 +282,6 @@ Precio €/m² (Tinsa) por tiempo y geografía - lista para Power BI
 | `id_tiempo` | bigint | - |
 | `id_geografia` | integer | - |
 | `precio_m2` | numeric(18,4) | Precio medio €/m² |
-| `anio` | integer | - |
-| `trimestre` | integer | - |
-| `fecha` | date | - |
-| `geografia_nombre` | text | - |
-| `geografia_nivel` | text | - |
 
 ### `marts.fact_transacciones_inmobiliarias` (table)
 
@@ -301,11 +293,6 @@ Número de transacciones inmobiliarias por tiempo, geografía (municipio) y tipo
 | `id_geografia` | integer | - |
 | `id_tipo_vivienda` | integer | - |
 | `num_transacciones` | integer | Número de transacciones inmobiliarias |
-| `anio` | integer | - |
-| `trimestre` | integer | - |
-| `fecha` | date | - |
-| `geografia_nombre` | text | - |
-| `nombre_tipo` | text | - |
 
 ## Fuentes (`sources`)
 
@@ -326,7 +313,7 @@ Número de transacciones inmobiliarias por tiempo, geografía (municipio) y tipo
 | `codigo_ccaa` | integer | - |
 | `codigo_pais` | integer | - |
 
-### `staging.ine_demograficos`
+### `staging.ine_demograficos_ambos`
 
 INE tabla 31114 — Indicadores demográficos, municipal y distrital de Málaga
 
@@ -338,11 +325,13 @@ INE tabla 31114 — Indicadores demográficos, municipal y distrital de Málaga
 | `Indicadores demograficos` | character varying(200) | - |
 | `Periodo` | character varying(10) | - |
 | `Total` | character varying(50) | - |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |
 
-### `staging.ine_demograficos_actualizado`
+### `staging.ine_demograficos_municipio`
 
-INE tabla 69301 — Indicadores demográficos actualizados (histórico más largo), municipal de Málaga, filtrado a Sexo=Total
+INE tabla 69301 — Indicadores demográficos actualizados (histórico más largo), solo municipal de Málaga (sin desglose distrital), filtrado a Sexo=Total
 
 | Columna | Tipo | Descripción |
 |---|---|---|
@@ -351,6 +340,8 @@ INE tabla 69301 — Indicadores demográficos actualizados (histórico más larg
 | `Sexo` | character varying(50) | - |
 | `Periodo` | character varying(10) | - |
 | `Total` | character varying(50) | - |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |
 
 ### `staging.ine_fuente_ingreso`
@@ -365,6 +356,8 @@ INE tabla 31107 — Distribución por fuente de ingresos, municipal y distrital 
 | `Distribucion por fuente de ingresos` | character varying(200) | - |
 | `Periodo` | character varying(10) | - |
 | `valor_porcentaje` | character varying(50) | Columna original '% distribucion de fuentes de ingreso' |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |
 
 ### `staging.ine_gini_p80p20`
@@ -379,6 +372,8 @@ INE tabla 37706 — Índice de Gini y distribución de la renta P80/P20, municip
 | `Indice de Gini y Distribucion de la renta P80/P20` | character varying(200) | - |
 | `Periodo` | character varying(10) | - |
 | `Total` | character varying(50) | - |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |
 
 ### `staging.ine_indicadores_malaga`
@@ -391,6 +386,8 @@ INE tabla 69303 — Indicadores socioeconómicos varios, municipal de Málaga (t
 | `Indicadores` | character varying(200) | - |
 | `Periodo` | character varying(10) | - |
 | `Total` | character varying(50) | - |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |
 
 ### `staging.ine_poblacion_sexo`
@@ -403,6 +400,8 @@ INE tabla 2882 — Población por sexo, municipal de Málaga (sin distrito/secci
 | `Sexo` | character varying(50) | Total, Hombres o Mujeres |
 | `Periodo` | character varying(10) | - |
 | `Total` | character varying(50) | - |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |
 
 ### `staging.ine_renta_persona_hogar`
@@ -417,6 +416,8 @@ INE tabla 31106 — Renta neta media por persona y por hogar, municipal y distri
 | `Indicadores de renta media y mediana` | character varying(200) | - |
 | `Periodo` | character varying(10) | - |
 | `Total` | character varying(50) | - |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |
 
 ### `staging.ine_turismo`
@@ -429,6 +430,8 @@ INE tabla 69307 — Indicadores turísticos, municipal de Málaga
 | `Indicadores` | character varying(200) | - |
 | `Periodo` | character varying(10) | - |
 | `Total` | character varying(50) | - |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |
 
 ### `reference.seed_geografia_tinsa`
@@ -469,6 +472,8 @@ Precio €/m² (Tinsa), todos los niveles geográficos (país/CCAA/provincia/mun
 | `periodo` | character varying(20) | Formato 'YYYY QT', ej. '2021 4T' |
 | `valor` | numeric(18,4) | Precio €/m², ya en formato numérico estándar (punto decimal) |
 | `url` | character varying(300) | URL completa de scraping; el slug tras /precio-vivienda/ identifica la geografía vía seed_geografia_tinsa |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |
 
 ### `staging.transacciones_libre`
@@ -481,6 +486,8 @@ Transacciones inmobiliarias de vivienda libre, municipio de Málaga (Ministerio 
 | `anio` | smallint | - |
 | `trimestre` | smallint | - |
 | `num_transacciones` | integer | - |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |
 
 ### `staging.transacciones_nueva`
@@ -493,6 +500,8 @@ Transacciones inmobiliarias de vivienda nueva, municipio de Málaga
 | `anio` | smallint | - |
 | `trimestre` | smallint | - |
 | `num_transacciones` | integer | - |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |
 
 ### `staging.transacciones_protegida`
@@ -505,6 +514,8 @@ Transacciones inmobiliarias de vivienda protegida, municipio de Málaga
 | `anio` | smallint | - |
 | `trimestre` | smallint | - |
 | `num_transacciones` | integer | - |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |
 
 ### `staging.transacciones_segunda_mano`
@@ -517,4 +528,6 @@ Transacciones inmobiliarias de vivienda de segunda mano, municipio de Málaga
 | `anio` | smallint | - |
 | `trimestre` | smallint | - |
 | `num_transacciones` | integer | - |
+| `creado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas) |
+| `actualizado_en` | timestamp without time zone | Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas) |
 | `id` | integer | - |

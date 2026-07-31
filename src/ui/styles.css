@@ -56,6 +56,16 @@ input[type="file"] {
     border: 1px solid #ccc;
 }
 
+/* ====== SELECT FUENTE ====== */
+select {
+    padding: 8px;
+    background: #ecf0f1;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin: 0 10px;
+    font-size: 14px;
+}
+
 /* ====== TABLA ====== */
 table {
     width: 100%;

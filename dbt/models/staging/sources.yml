@@ -15,6 +15,10 @@ sources:
             description: "Precio €/m², ya en formato numérico estándar (punto decimal)"
           - name: url
             description: "URL completa de scraping; el slug tras /precio-vivienda/ identifica la geografía vía seed_geografia_tinsa"
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
       - name: ine_renta_persona_hogar
         description: "INE tabla 31106 — Renta neta media por persona y por hogar, municipal y distrital de Málaga"
@@ -25,8 +29,12 @@ sources:
           - name: "Indicadores de renta media y mediana"
           - name: Periodo
           - name: Total
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
-      - name: ine_demograficos
+      - name: ine_demograficos_ambos
         description: "INE tabla 31114 — Indicadores demográficos, municipal y distrital de Málaga"
         columns:
           - name: Municipios
@@ -35,6 +43,10 @@ sources:
           - name: "Indicadores demograficos"
           - name: Periodo
           - name: Total
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
       - name: ine_fuente_ingreso
         description: "INE tabla 31107 — Distribución por fuente de ingresos, municipal y distrital de Málaga"
@@ -46,6 +58,10 @@ sources:
           - name: Periodo
           - name: valor_porcentaje
             description: "Columna original '% distribucion de fuentes de ingreso'"
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
       - name: ine_gini_p80p20
         description: "INE tabla 37706 — Índice de Gini y distribución de la renta P80/P20, municipal y distrital de Málaga"
@@ -56,6 +72,10 @@ sources:
           - name: "Indice de Gini y Distribucion de la renta P80/P20"
           - name: Periodo
           - name: Total
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
       - name: ine_poblacion_sexo
         description: "INE tabla 2882 — Población por sexo, municipal de Málaga (sin distrito/sección)"
@@ -65,6 +85,10 @@ sources:
             description: "Total, Hombres o Mujeres"
           - name: Periodo
           - name: Total
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
       - name: ine_indicadores_malaga
         description: "INE tabla 69303 — Indicadores socioeconómicos varios, municipal de Málaga (texto plano, sin código INE)"
@@ -73,15 +97,23 @@ sources:
           - name: Indicadores
           - name: Periodo
           - name: Total
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
-      - name: ine_demograficos_actualizado
-        description: "INE tabla 69301 — Indicadores demográficos actualizados (histórico más largo), municipal de Málaga, filtrado a Sexo=Total"
+      - name: ine_demograficos_municipio
+        description: "INE tabla 69301 — Indicadores demográficos actualizados (histórico más largo), solo municipal de Málaga (sin desglose distrital), filtrado a Sexo=Total"
         columns:
           - name: Municipios
           - name: Indicadores
           - name: Sexo
           - name: Periodo
           - name: Total
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
       - name: ine_turismo
         description: "INE tabla 69307 — Indicadores turísticos, municipal de Málaga"
@@ -90,6 +122,10 @@ sources:
           - name: Indicadores
           - name: Periodo
           - name: Total
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
       - name: transacciones_libre
         description: "Transacciones inmobiliarias de vivienda libre, municipio de Málaga (Ministerio de Transportes y Movilidad Sostenible)"
@@ -98,6 +134,10 @@ sources:
           - name: anio
           - name: trimestre
           - name: num_transacciones
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
       - name: transacciones_segunda_mano
         description: "Transacciones inmobiliarias de vivienda de segunda mano, municipio de Málaga"
@@ -106,6 +146,10 @@ sources:
           - name: anio
           - name: trimestre
           - name: num_transacciones
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
       - name: transacciones_nueva
         description: "Transacciones inmobiliarias de vivienda nueva, municipio de Málaga"
@@ -114,6 +158,10 @@ sources:
           - name: anio
           - name: trimestre
           - name: num_transacciones
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
       - name: transacciones_protegida
         description: "Transacciones inmobiliarias de vivienda protegida, municipio de Málaga"
@@ -122,3 +170,7 @@ sources:
           - name: anio
           - name: trimestre
           - name: num_transacciones
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"

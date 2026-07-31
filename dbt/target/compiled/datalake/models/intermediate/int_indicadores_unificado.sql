@@ -6,7 +6,7 @@
 WITH union_indicadores AS (
     SELECT * FROM "postgres"."staging"."stg_indicadores_renta_persona_hogar"
     UNION ALL
-    SELECT * FROM "postgres"."staging"."stg_indicadores_demograficos"
+    SELECT * FROM "postgres"."staging"."stg_indicadores_demograficos_ambos"
     UNION ALL
     SELECT * FROM "postgres"."staging"."stg_indicadores_fuente_ingreso"
     UNION ALL
@@ -16,7 +16,7 @@ WITH union_indicadores AS (
     UNION ALL
     SELECT * FROM "postgres"."staging"."stg_indicadores_malaga"
     UNION ALL
-    SELECT * FROM "postgres"."staging"."stg_indicadores_demograficos_actualizado"
+    SELECT * FROM "postgres"."staging"."stg_indicadores_demograficos_municipio"
     UNION ALL
     SELECT * FROM "postgres"."staging"."stg_indicadores_turismo"
 ),

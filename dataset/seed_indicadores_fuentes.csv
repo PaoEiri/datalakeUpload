@@ -7,7 +7,7 @@ indicador_id,descripcion,nombre_indicador,categoria_indicador,unidad,aplica_muni
 7,% Proporción de extranjeros sobre la población total,Proporción de extranjeros sobre la población total (Porcentaje),demográfico,%,TRUE,FALSE,1,porcentaje,69301,https://www.ine.es/jaxiT3/Datos.htm?t=69301,
 8,# Población total,Población,demográfico,persona,FALSE,TRUE,0,cantidad,31114,https://www.ine.es/jaxiT3/Tabla.htm?t=31114,poblacion_total
 29,# Población total-m,Total,demográfico,persona,FALSE,FALSE,0,cantidad,2882,https://www.ine.es/jaxiT3/Tabla.htm?t=2882,poblacion_total
-2,€ Renta media por hogar,Renta neta media por hogar,socioeconómico,€,TRUE,TRUE,0,cantidad,31106,https://www.ine.es/jaxiT3/Datos.htm?t=31106,
+2,€ Renta media por hogar,Renta neta media por hogar,socioeconómico,€,TRUE,FALSE,0,cantidad,31106,https://www.ine.es/jaxiT3/Datos.htm?t=31106,
 1,€ Renta media por persona,Renta neta media por persona,socioeconómico,€,TRUE,TRUE,0,cantidad,31106,https://www.ine.es/jaxiT3/Datos.htm?t=31106,renta_persona
 27,€ Renta neta media anual de los hogares,Renta neta media anual de los hogares (Euros),socioeconómico,€,TRUE,FALSE,0,cantidad,69303,https://www.ine.es/jaxiT3/Tabla.htm?t=69303,
 28,€ Renta neta media anual por unidad de consumo,Renta neta media anual por unidad de consumo (Euros),socioeconómico,€,TRUE,FALSE,0,cantidad,69303,https://www.ine.es/jaxiT3/Tabla.htm?t=69303,

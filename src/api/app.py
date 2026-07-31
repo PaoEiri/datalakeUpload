@@ -10,7 +10,7 @@ app = FastAPI(
     title="Dataset Catalog API",
     version="0.1.0",
 )
-app.mount("/ui", StaticFiles(directory="src/ui"), name="ui")
+app.mount("/ui", StaticFiles(directory="src/ui", html=True), name="ui")
 # CORS (opcional)
 app.add_middleware(
     CORSMiddleware,

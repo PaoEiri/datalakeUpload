@@ -1,4 +1,9 @@
-{{ config(materialized='view') }}
+
+  create view "postgres"."staging"."stg_indicadores_demograficos_municipio__dbt_tmp"
+    
+    
+  as (
+    
 
 SELECT
     69301 AS codigo_ine_fuente,
@@ -7,6 +12,7 @@ SELECT
     "Indicadores" AS nombre_indicador,
     TRIM("Periodo")::int AS anio,
     CAST(REPLACE(REPLACE(TRIM("Total"), '.', ''), ',', '.') AS NUMERIC(18, 4)) AS valor
-FROM {{ source('staging', 'ine_demograficos_municipio') }}
+FROM "postgres"."staging"."ine_demograficos_municipio"
 WHERE TRIM("Municipios") = 'Málaga'
   AND TRIM("Sexo") = 'Total'
+  );

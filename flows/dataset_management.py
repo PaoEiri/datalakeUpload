@@ -2,6 +2,7 @@ import io
 import json
 import os
 import pandas as pd
+import xlrd
 
 from prefect import flow, task
 from prefect.logging import get_run_logger
@@ -33,7 +34,7 @@ def get_minio_client() -> MinioClient:
 @task
 def upload_to_minio(file_bytes: bytes, filename: str) -> tuple[str, str]:
     ext = os.path.splitext(filename)[1].lower()
-    file_format = "csv" if ext == ".csv" else "json"
+    file_format = {".csv": "csv", ".json": "json", ".xls": "xls"}.get(ext, "json")
     storage_key = filename
 
     client = get_minio_client()
@@ -124,13 +125,10 @@ def _normalize_preview(df: pd.DataFrame) -> list:
     if df.empty:
         return []
     import json
-    import math
-    records = df.where(pd.notna(df), None).to_dict(orient="records")
-    # Reemplaza float NaN/Inf que pandas no convierte a None correctamente
-    cleaned = json.loads(
-        json.dumps(records, default=lambda x: None if (isinstance(x, float) and (math.isnan(x) or math.isinf(x))) else x)
-    )
-    return cleaned
+    # df.to_json serializa NaN/NaT como null en columnas numéricas, a
+    # diferencia de df.where(...).to_dict(), que pandas revierte a NaN al
+    # asignar None sobre una columna float64.
+    return json.loads(df.to_json(orient="records", date_format="iso"))
 
 def _extract_csv_metadata(bucket_name: str, object_key: str) -> dict:
     client = get_minio_client()
@@ -223,10 +221,44 @@ def _extract_json_metadata(bucket_name: str, object_key: str) -> dict:
     }
 
 
+def _extract_xls_metadata(bucket_name: str, object_key: str) -> dict:
+    client = get_minio_client()
+    body = client.get_object(object_key, bucket_name=bucket_name)["Body"].read()
+
+    book = xlrd.open_workbook(file_contents=body)
+    sheet = book.sheet_by_index(0)
+
+    if sheet.nrows == 0 or sheet.ncols == 0:
+        raise ValueError("El XLS no contiene datos.")
+
+    # Estos ficheros (transacciones Ministerio) tienen cabecera multi-fila
+    # (Año/trimestre combinados) — no hay un único header limpio, así que el
+    # preview expone las primeras filas en crudo por posición de columna. El
+    # parseo real a staging.* lo hace _make_transacciones_parser en
+    # src/tasks/staging_fuentes.py, no este preview.
+    preview_rows = min(20, sheet.nrows)
+    df_preview = pd.DataFrame(
+        [[sheet.cell_value(r, c) for c in range(sheet.ncols)] for r in range(preview_rows)]
+    )
+    df_preview.columns = [f"col_{i}" for i in range(sheet.ncols)]
+
+    schema = [{"name": c, "dtype": "object"} for c in df_preview.columns]
+    preview = _normalize_preview(df_preview)
+
+    return {
+        "row_count": sheet.nrows,
+        "column_count": sheet.ncols,
+        "schema": schema,
+        "preview": preview,
+    }
+
+
 @task
 def extract_metadata(bucket_name: str, object_key: str, file_format: str) -> dict:
     if file_format == "csv":
         return _extract_csv_metadata(bucket_name, object_key)
+    if file_format == "xls":
+        return _extract_xls_metadata(bucket_name, object_key)
     return _extract_json_metadata(bucket_name, object_key)
 
 

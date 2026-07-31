@@ -111,12 +111,12 @@ POST /datasets_upload/upload (+ id_fuente opcional)
 │       │   ├── schema.yml
 │       │   ├── stg_precios_tinsa.sql
 │       │   ├── stg_indicadores_renta_persona_hogar.sql   # 31106
-│       │   ├── stg_indicadores_demograficos.sql          # 31114
+│       │   ├── stg_indicadores_demograficos_ambos.sql    # 31114 (municipal+distrital)
 │       │   ├── stg_indicadores_fuente_ingreso.sql        # 31107
 │       │   ├── stg_indicadores_gini_p80p20.sql           # 37706
 │       │   ├── stg_poblacion_sexo.sql                    # 2882
 │       │   ├── stg_indicadores_malaga.sql                # 69303
-│       │   ├── stg_indicadores_demograficos_actualizado.sql  # 69301
+│       │   ├── stg_indicadores_demograficos_municipio.sql # 69301 (solo municipal)
 │       │   ├── stg_indicadores_turismo.sql               # 69307
 │       │   ├── stg_transacciones_libre.sql
 │       │   ├── stg_transacciones_segunda_mano.sql
@@ -212,7 +212,7 @@ public.fuentes_registradas_historial
 
 - **Precios €/m² (Tinsa)**: `tinsa_precios` — todos los niveles geográficos (país/CCAA/provincia/municipio/distrito) identificados por URL, no por texto de zona (ambiguo)
 - **Transacciones inmobiliarias (Ministerio de Transportes y Movilidad Sostenible)**: `transacciones_libre`, `transacciones_segunda_mano`, `transacciones_nueva`, `transacciones_protegida` — municipio de Málaga, ya parseadas de tabla ancha a formato largo
-- **Indicadores socioeconómicos (INE)**: `ine_renta_persona_hogar` (31106), `ine_demograficos` (31114), `ine_fuente_ingreso` (31107), `ine_gini_p80p20` (37706), `ine_poblacion_sexo` (2882), `ine_indicadores_malaga` (69303), `ine_demograficos_actualizado` (69301), `ine_turismo` (69307)
+- **Indicadores socioeconómicos (INE)**: `ine_renta_persona_hogar` (31106), `ine_demograficos_ambos` (31114, municipal+distrital), `ine_fuente_ingreso` (31107), `ine_gini_p80p20` (37706), `ine_poblacion_sexo` (2882), `ine_indicadores_malaga` (69303), `ine_demograficos_municipio` (69301, solo municipal), `ine_turismo` (69307)
 
 ### Esquema `reference` — datos de referencia curados a mano
 

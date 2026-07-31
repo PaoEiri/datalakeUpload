@@ -21,12 +21,12 @@ proyecto_dbt/
 │   │   ├── stg_precios_tinsa.sql            # tinsa_malaga_andalucia.csv
 │   │   │
 │   │   ├── stg_indicadores_renta_persona_hogar.sql   # 31106.csv
-│   │   ├── stg_indicadores_demograficos.sql          # 31114.csv
+│   │   ├── stg_indicadores_demograficos_ambos.sql    # 31114.csv (municipal+distrital)
 │   │   ├── stg_indicadores_fuente_ingreso.sql        # 31107.csv
 │   │   ├── stg_indicadores_gini_p80p20.sql           # 37706.csv
 │   │   ├── stg_poblacion_sexo.sql                    # 2882.csv
 │   │   ├── stg_indicadores_malaga.sql                # 69303.csv (ya entregado)
-│   │   ├── stg_indicadores_demograficos_actualizado.sql  # 69301.csv
+│   │   ├── stg_indicadores_demograficos_municipio.sql # 69301.csv (solo municipal)
 │   │   ├── stg_indicadores_turismo.sql               # 69307.csv
 │   │   │
 │   │   ├── stg_transacciones_libre.sql              # min_..._libre_por_municipios.XLS

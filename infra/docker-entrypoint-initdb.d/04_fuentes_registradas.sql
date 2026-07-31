@@ -33,12 +33,12 @@ INSERT INTO public.fuentes_registradas
     (sistema_origen, codigo_fuente, nivel_territorial, stg_modelo_destino)
 VALUES
     ('INE', '31106', 'Ambos',     'stg_indicadores_renta_persona_hogar'),
-    ('INE', '31114', 'Ambos',     'stg_indicadores_demograficos'),
+    ('INE', '31114', 'Ambos',     'stg_indicadores_demograficos_ambos'),
     ('INE', '31107', 'Ambos',     'stg_indicadores_fuente_ingreso'),
     ('INE', '37706', 'Ambos',     'stg_indicadores_gini_p80p20'),
     ('INE', '2882',  'Municipio', 'stg_poblacion_sexo'),
     ('INE', '69303', 'Municipio', 'stg_indicadores_malaga'),
-    ('INE', '69301', 'Municipio', 'stg_indicadores_demograficos_actualizado'),
+    ('INE', '69301', 'Municipio', 'stg_indicadores_demograficos_municipio'),
     ('INE', '69307', 'Municipio', 'stg_indicadores_turismo'),
 
     ('Tinsa', 'tinsa_precios', 'Multiescala', 'stg_precios_tinsa'),

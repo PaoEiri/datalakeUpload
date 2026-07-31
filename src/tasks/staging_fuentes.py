@@ -48,7 +48,15 @@ def _make_ine_parser(
     drop: list[str] | None = None,
 ) -> Callable[[bytes], pd.DataFrame]:
     def parser(file_bytes: bytes) -> pd.DataFrame:
-        df = pd.read_csv(io.BytesIO(file_bytes), sep=";", encoding=encoding, dtype=str)
+        # El INE no es consistente entre descargas: algunas exportaciones
+        # vienen en UTF-8 con BOM y otras en la codificación de un solo byte
+        # configurada para la fuente (latin-1/cp1252). Si hay BOM, el archivo
+        # es realmente UTF-8 — forzar la codificación fija mutilaría los
+        # acentos (ej. "Málaga" -> "MÃ¡laga" con latin-1), y como eso no
+        # lanza error, los filtros por nombre dejan de matchear y la carga
+        # "tiene éxito" con 0 filas, en silencio.
+        actual_encoding = "utf-8-sig" if file_bytes.startswith(b"\xef\xbb\xbf") else encoding
+        df = pd.read_csv(io.BytesIO(file_bytes), sep=";", encoding=actual_encoding, dtype=str)
         df = _limpiar_ine(df)
         df = filtro(df)
         if drop:
@@ -117,7 +125,10 @@ def _make_transacciones_parser(municipio_objetivo: str = "Málaga") -> Callable[
         col_periodo: dict[int, tuple[int, int]] = {}
         for c in range(3, sheet.ncols):
             trim_cell = str(sheet.cell_value(header_trim_row, c)).strip()
-            m = re.match(r"^(\d)º$", trim_cell)
+            # El último trimestre publicado suele venir marcado como
+            # provisional por el INE, ej. "1º (*)" — se acepta igual que un
+            # trimestre normal (ver discusión sobre 2026 T1 de transacciones).
+            m = re.match(r"^(\d)º(\s*\(\*\))?$", trim_cell)
             if m and anio_por_col.get(c):
                 col_periodo[c] = (anio_por_col[c], int(m.group(1)))
 
@@ -159,7 +170,7 @@ PARSERS: dict[str, tuple[str, Callable[[bytes], pd.DataFrame]]] = {
         _make_ine_parser("latin-1", _filtro_malaga_con_distrito),
     ),
     "31114": (
-        "ine_demograficos",
+        "ine_demograficos_ambos",
         _make_ine_parser(
             "utf-8-sig",
             _filtro_malaga_con_distrito,
@@ -196,7 +207,7 @@ PARSERS: dict[str, tuple[str, Callable[[bytes], pd.DataFrame]]] = {
         _make_ine_parser("latin-1", _filtro_malaga_texto, drop=["Total Nacional"]),
     ),
     "69301": (
-        "ine_demograficos_actualizado",
+        "ine_demograficos_municipio",
         _make_ine_parser("latin-1", _filtro_malaga_texto_sexo_total, drop=["Total Nacional"]),
     ),
     "69307": (
@@ -218,6 +229,25 @@ def cargar_fuente_a_staging(codigo_fuente: str, file_bytes: bytes) -> int:
 
     tabla, parser = PARSERS[codigo_fuente]
     df = parser(file_bytes)
+
+    if len(df) == 0:
+        # Si el filtro de municipio no matchea nada (ej. encoding mal
+        # detectado, cambio de formato en el fichero de origen) el parser no
+        # lanza error — sin este check, se haría TRUNCATE + INSERT de 0 filas
+        # y el flow marcaría igualmente el dataset como vigente, dejando la
+        # fuente con la tabla de staging vacía en silencio.
+        raise ValueError(
+            f"El parser de '{codigo_fuente}' no encontró ninguna fila tras "
+            f"filtrar (0 filas). Revisa encoding/formato del fichero de origen."
+        )
+
+    # Al ser TRUNCATE + INSERT completo, creado_en y actualizado_en quedan
+    # siempre iguales dentro de una misma carga (no hay UPDATE de filas
+    # existentes) — se guardan ambas por consistencia con el resto de tablas
+    # del sistema (datasets_upload, fuentes_registradas).
+    ahora = pd.Timestamp.utcnow().tz_localize(None)
+    df["creado_en"] = ahora
+    df["actualizado_en"] = ahora
 
     with SessionLocal() as db:
         conn = db.connection()

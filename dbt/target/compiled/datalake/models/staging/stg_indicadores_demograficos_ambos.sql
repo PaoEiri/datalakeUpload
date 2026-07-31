@@ -1,4 +1,4 @@
-{{ config(materialized='view') }}
+
 
 SELECT
     31114 AS codigo_ine_fuente,
@@ -7,6 +7,6 @@ SELECT
     "Indicadores demograficos" AS nombre_indicador,
     TRIM("Periodo")::int AS anio,
     CAST(REPLACE(REPLACE(TRIM("Total"), '.', ''), ',', '.') AS NUMERIC(18, 4)) AS valor
-FROM {{ source('staging', 'ine_demograficos_ambos') }}
+FROM "postgres"."staging"."ine_demograficos_ambos"
 WHERE TRIM("Municipios") = '29067 Málaga'
   AND ("Secciones" IS NULL OR TRIM("Secciones") = '')

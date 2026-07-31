@@ -83,10 +83,10 @@ async def upload_dataset(
     filename = file.filename or "uploaded_data"
     ext = os.path.splitext(filename)[1].lower()
 
-    if ext not in {".csv", ".json"}:
+    if ext not in {".csv", ".json", ".xls"}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Solo se permiten archivos CSV o JSON.",
+            detail="Solo se permiten archivos CSV, JSON o XLS.",
         )
 
     file_bytes = await file.read()
