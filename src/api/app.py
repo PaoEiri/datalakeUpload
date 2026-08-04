@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .datasets import router as dataset_router
 from .fuentes import router as fuentes_router
+from .consulta import router as consulta_router
 from src.config import settings
 from src.storage.minio_client import MinioClient
 
@@ -23,6 +24,7 @@ app.add_middleware(
 # Registrar rutas
 app.include_router(dataset_router, prefix="/datasets_upload", tags=["datasets_upload"])
 app.include_router(fuentes_router, prefix="/fuentes_registradas", tags=["fuentes_registradas"])
+app.include_router(consulta_router, prefix="/consulta", tags=["consulta"])
 
 
 @app.on_event("startup")

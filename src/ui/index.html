@@ -1,32 +1,147 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="utf-8">
-    <title>Dataset Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Análisis del Mercado Inmobiliario en Málaga · TFM</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<h1>Gestión de Datasets</h1>
+<header class="app-header">
+    <h1>Análisis del Mercado Inmobiliario en Málaga</h1>
+    <p>Trabajo Fin de Máster · Relación entre indicadores socioeconómicos y precio de la vivienda</p>
+</header>
 
-<section id="upload-section">
-    <h2>Subir archivo</h2>
-    <input type="file" id="file-input" accept=".csv,.json,.xls">
-    <label for="fuente-select">Fuente a reemplazar:</label>
-    <select id="fuente-select">
-        <option value="">-- Sin fuente (huérfano) --</option>
-    </select>
-    <button onclick="uploadFile()">Subir</button>
-</section>
+<nav class="main-nav">
+    <button class="nav-btn active" data-view="view-carga" onclick="switchView('view-carga')">Carga de archivos</button>
+    <button class="nav-btn" data-view="view-consulta" onclick="switchView('view-consulta')">Consulta de datos</button>
+    <button class="nav-btn" data-view="view-analisis" onclick="switchView('view-analisis')">Análisis y gráficos</button>
+</nav>
 
-<section id="list-section">
-    <h2>Listado de archivos</h2>
-    <button onclick="loadList()">Refrescar</button>
-    <table id="datasets-table"></table>
-</section>
+<main>
 
+    <!-- Vista 1: Carga de archivos -->
+    <section id="view-carga" class="view active">
+        <section id="upload-section" class="card">
+            <h2>Subir archivo</h2>
+            <div class="filtros">
+                <label>Archivo
+                    <input type="file" id="file-input" accept=".csv,.json,.xls">
+                </label>
+                <label>Fuente a reemplazar
+                    <select id="fuente-select">
+                        <option value="">-- Sin fuente (huérfano) --</option>
+                    </select>
+                </label>
+                <button onclick="uploadFile()">Subir</button>
+            </div>
+        </section>
+
+        <section id="list-section" class="card">
+            <h2>Listado de archivos</h2>
+            <button onclick="loadList()">Refrescar</button>
+            <div class="table-wrap">
+                <table id="datasets-table"></table>
+            </div>
+        </section>
+    </section>
+
+    <!-- Vista 2: Consulta de datos -->
+    <section id="view-consulta" class="view">
+        <nav class="sub-nav">
+            <button class="subtab-btn active" data-subtab="tab-precios" onclick="switchSubtab('tab-precios')">Precios de vivienda</button>
+            <button class="subtab-btn" data-subtab="tab-indicadores" onclick="switchSubtab('tab-indicadores')">Indicadores socioeconómicos</button>
+        </nav>
+
+        <div id="tab-precios" class="subtab active card">
+            <div class="filtros">
+                <label>Geografía
+                    <select id="precios-geografia" onchange="buscarPrecios()">
+                        <option value="">Todas</option>
+                    </select>
+                </label>
+                <label>Año
+                    <select id="precios-anio" onchange="buscarPrecios()">
+                        <option value="">Todos</option>
+                    </select>
+                </label>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Geografía</th>
+                            <th>Nivel</th>
+                            <th>Periodo</th>
+                            <th>Precio €/m²</th>
+                        </tr>
+                    </thead>
+                    <tbody id="precios-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-indicadores" class="subtab card">
+            <div class="filtros">
+                <label>Geografía
+                    <select id="ind-geografia" onchange="buscarIndicadores()">
+                        <option value="">Todas</option>
+                    </select>
+                </label>
+                <label>Año
+                    <select id="ind-anio" onchange="buscarIndicadores()">
+                        <option value="">Todos</option>
+                    </select>
+                </label>
+                <label>Categoría
+                    <select id="ind-categoria" onchange="onCategoriaChange()">
+                        <option value="">Todas</option>
+                    </select>
+                </label>
+                <label>Indicador
+                    <select id="ind-indicador" onchange="buscarIndicadores()">
+                        <option value="">Todos</option>
+                    </select>
+                </label>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Geografía</th>
+                            <th>Nivel</th>
+                            <th>Año</th>
+                            <th>Indicador</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="indicadores-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vista 3: Análisis y gráficos -->
+    <section id="view-analisis" class="view">
+        <div class="dashboard-frame">
+            <iframe title="informe TFM"
+                    src="https://app.powerbi.com/view?r=eyJrIjoiYmIwZmM5MjgtYzA3Mi00ZWQ5LWJlZTgtOTdlNDQxYWEyNTBjIiwidCI6ImU3ZjUzZjNmLTYzNmItNDNhZC04MDdlLTU3Yzk2NmZmN2RiOCIsImMiOjh9"
+                    frameborder="0"
+                    allowFullScreen="true"></iframe>
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    Fuentes: INE · Ministerio de Transportes y Movilidad Sostenible · Tinsa
+</footer>
+
+<script src="/ui/nav.js"></script>
 <script src="/ui/upload.js"></script>
 <script src="/ui/list.js"></script>
+<script src="/ui/consulta.js"></script>
 <script>
     window.onload = () => {
         loadFuentes();

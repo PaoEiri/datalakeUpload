@@ -6,17 +6,52 @@ Trabajo Final de Máster — Arquitectura de datos end-to-end para la ingesta, a
 
 ---
 
+
+![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)
+![dbt](https://img.shields.io/badge/dbt-postgres-FF694B?logo=dbt&logoColor=white)
+![Prefect](https://img.shields.io/badge/Prefect-3-024DFD?logo=prefect&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-REST%20API-009688?logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Power BI](https://img.shields.io/badge/Power%20BI-Dashboards-F2C811?logo=powerbi&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+
+## Resumen
+
+Pipeline de datos end-to-end (ingesta → data warehouse → visualización) que analiza el mercado inmobiliario de Málaga a partir de datos abiertos de Tinsa, el Ministerio de Transportes y el INE. Desde 2001 hasta 2026, el precio por m² en el municipio de Málaga ha pasado de **€696 a €2.931** (+14,7% solo en el último año), con diferencias de hasta el **137,83%** en 10 años entre distritos.
+
+**🔗 Dashboard interactivo**: https://paoeiri.github.io/datalakeUpload/docs/index.html
+
+### Vistas del dashboard
+
+**Evolución del precio de la vivienda en Málaga vs Andalucía vs España**
+Precio por m², transacciones por tipo de vivienda (libre, segunda mano, nueva, protegida) y variación interanual, con serie histórica trimestral desde 2001.
+
+![Evolución del precio de la vivienda](docs/images/dashboard-evolucion-precios.png)
+
+**Comparativa por distritos**
+Mapa de calor y ranking de los 11 distritos de Málaga por precio actual, variación a 1 y 10 años. Bailén-Miraflores lidera el crecimiento a 10 años (+137,83%), Campanillas el crecimiento interanual (+26,93%), y Este tiene el precio máximo actual (€3.929/m²).
+
+![Comparativa por distritos](docs/images/dashboard-distritos.png)
+
+**Relación entre indicadores socioeconómicos y precio de la vivienda**
+Análisis de correlación (Pearson) entre indicadores del INE (demográficos, renta, Gini) y la variación del precio de vivienda, con R² y significancia estadística calculados sobre variaciones interanuales para evitar correlaciones espurias por tendencia compartida.
+
+![Correlación con indicadores](docs/images/dashboard-correlacion-indicadores.png)
+
+---
+
 ## Descripción general
 
 El proyecto implementa un pipeline de datos completo que parte de ficheros de datos abiertos (CSV/XLS/XLSX) publicados por Tinsa, el Ministerio de Transportes y Movilidad Sostenible y el INE, y los transforma en un modelo dimensional (esquema estrella) listo para su explotación analítica en Power BI, centrado en el mercado inmobiliario de Málaga.
 
 La arquitectura separa claramente las responsabilidades en capas:
 
-- **Ingesta**: API REST que acepta ficheros, los almacena en un object storage y los vincula (opcionalmente) a una fuente catalogada para versionado automático
+- **Ingesta**: API REST que acepta ficheros (CSV/JSON/XLS), los almacena en un object storage y los vincula (opcionalmente) a una fuente catalogada para versionado automático
 - **Catálogo**: `datasets_upload` (historial inmutable de cada subida) + `fuentes_registradas`/`fuentes_registradas_historial` (qué versión está vigente por fuente, y auditoría de cambios)
 - **Orquestación**: flujos de Prefect que validan, extraen metadatos, cargan a staging y ejecutan dbt de forma acotada a la fuente actualizada
-- **Data Warehouse**: modelo dimensional en cuatro capas dbt (staging → intermediate → core → marts) + un esquema `reference` con datos de referencia curados a mano
-- **Visualización**: conexión directa desde Power BI a la capa marts
+- **Data Warehouse**: modelo multi dimensional en cuatro capas dbt (staging → intermediate → core → marts) + un esquema `reference` con datos de referencia curados a mano, en esquema estrella "limpio" (las tablas de hechos solo tienen FKs + métricas, sin columnas descriptivas duplicadas de las dimensiones)
+- **Consulta**: API de solo lectura (`/consulta/*`) sobre `core`/`marts`, consumida por el UI unificado y disponible para cualquier otro cliente
+- **Visualización**: UI web propio (`/ui/`, 3 vistas: carga, consulta de datos, dashboard embebido) + conexión directa desde Power BI Desktop a la capa marts + landing pública en GitHub Pages (`docs/index.html`, solo el dashboard)
 
 Hay **dos caminos de carga**, y es importante no confundirlos (ver [Dos caminos de carga](#dos-caminos-de-carga)):
 1. **Referencia** (`scripts/load_tfm_dataset.py`): carga puntual del dataset de este TFM directamente desde `dataset/` a `staging.*`, sin pasar por la API/MinIO/catálogo. Ya probado end-to-end (72 tests dbt en verde).
@@ -73,14 +108,16 @@ POST /datasets_upload/upload (+ id_fuente opcional)
 
 | Componente | Tecnología | Rol |
 |---|---|---|
-| API REST | FastAPI + Python | Ingesta de ficheros + catálogo de fuentes |
+| API REST | FastAPI + Python | Ingesta de ficheros + catálogo de fuentes + consulta de solo lectura |
 | Object storage | MinIO (S3-compatible) | Almacenamiento de bytes |
 | Base de datos | PostgreSQL 16 | Metadatos + catálogo de fuentes + Data Warehouse |
 | Orquestación | Prefect 3 | Flujos: validación, carga a staging, dbt run acotado |
 | Transformación | pandas, xlrd, openpyxl | Limpieza y carga a staging (CSV/XLS/XLSX) |
 | Modelado | dbt (dbt-postgres) | Capas staging, intermediate, core, marts + esquema reference |
+| UI web | HTML/CSS/JS puro (sin build step) | Carga, consulta de datos y dashboard embebido, servido por FastAPI en `/ui/` |
 | Visualización | Power BI Desktop | Dashboards analíticos |
 | Contenedores | Docker + Docker Compose | Infraestructura local |
+| Publicación | GitHub Pages (`docs/`) | Landing pública con el dashboard embebido |
 
 ---
 
@@ -145,6 +182,7 @@ POST /datasets_upload/upload (+ id_fuente opcional)
 │   ├── load_tfm_dataset.py              # Camino de referencia: dataset/ -> staging.* (13 fuentes)
 │   └── generate_data_dictionary.py      # Genera docs/diccionario_datos.md desde dbt docs
 ├── docs/
+│   ├── index.html                       # Landing pública (GitHub Pages): solo el dashboard Power BI
 │   └── diccionario_datos.md             # Diccionario de datos autogenerado
 ├── flows/
 │   ├── 03_dbt_run.py                    # dbt run, con selector opcional
@@ -171,6 +209,7 @@ POST /datasets_upload/upload (+ id_fuente opcional)
     │   ├── app.py
     │   ├── datasets.py                  # POST /upload (+ id_fuente), GET /, GET /{id}, GET /{id}/preview
     │   ├── fuentes.py                   # GET /fuentes_registradas, POST /{id_fuente}/reprocesar
+    │   ├── consulta.py                  # GET /consulta/* — solo lectura sobre core.*/marts.*
     │   └── schemas.py
     ├── db/
     │   ├── database.py
@@ -180,6 +219,13 @@ POST /datasets_upload/upload (+ id_fuente opcional)
     ├── tasks/
     │   ├── dbt.py
     │   └── staging_fuentes.py           # Dispatcher de parseo por codigo_fuente (bytes -> staging.*)
+    ├── ui/                              # UI unificado, servido en /ui/ por dataset-api (HTML/CSS/JS sin build step)
+    │   ├── index.html                   # Shell con menú de 3 vistas
+    │   ├── styles.css                   # Identidad visual institucional (paleta UMA, Georgia + Segoe UI)
+    │   ├── nav.js                       # Cambio de vista / sub-pestañas
+    │   ├── upload.js                    # Vista "Carga de archivos"
+    │   ├── list.js                      # Listado + preview de datasets subidos
+    │   └── consulta.js                  # Vista "Consulta de datos" (filtros + tablas contra /consulta/*)
     └── config.py
 ```
 
@@ -259,12 +305,42 @@ fact_indicadores_anuales            -- grano: tiempo (anual) x geografía x indi
 
 ## Capacidades de la API
 
-- `POST /datasets_upload/upload` — subir CSV o JSON, almacenar en MinIO y programar validación asíncrona. Acepta `id_fuente` opcional (form field, FK a `fuentes_registradas`): si se indica, al validar con éxito se encadena automáticamente la carga a staging + `dbt run` acotado + actualización de vigencia. Sin `id_fuente`, el dataset queda "huérfano" (solo exploración, sin vincular a ningún pipeline).
+- `POST /datasets_upload/upload` — subir CSV, JSON o XLS, almacenar en MinIO y programar validación asíncrona. Acepta `id_fuente` opcional (form field, FK a `fuentes_registradas`): si se indica, al validar con éxito se encadena automáticamente la carga a staging + `dbt run` acotado + actualización de vigencia. Sin `id_fuente`, el dataset queda "huérfano" (solo exploración, sin vincular a ningún pipeline).
 - `GET /datasets_upload` — listar todos los datasets uploads disponibles y metadatos básicos.
 - `GET /datasets_upload/{dataset_id}` — obtener información detallada de un dataset upload.
 - `GET /datasets_upload/{dataset_id}/preview` — ver las primeras filas extraídas sin descargar el dataset.
 - `GET /fuentes_registradas` — catálogo de las 13 fuentes con su dataset vigente (join contra `datasets_upload`).
 - `POST /fuentes_registradas/{id_fuente}/reprocesar` — reintenta carga a staging + `dbt run` acotado para el dataset ya vigente de esa fuente, sin necesidad de re-subir el archivo.
+- `GET /consulta/geografias`, `GET /consulta/anios` — catálogos para poblar filtros (geografía; años, separados por grano trimestral/anual).
+- `GET /consulta/precios?id_geografia=&anio=` — tabla de `marts.fact_precio_vivienda` con nombre/nivel de geografía y periodo ya resueltos, filtros combinables.
+- `GET /consulta/categorias_indicador`, `GET /consulta/indicadores?categoria=` — catálogo de indicadores, el segundo filtrable por categoría (dropdown dependiente).
+- `GET /consulta/indicadores_valores?id_geografia=&anio=&id_indicador=` — tabla de `marts.fact_indicadores_anuales` resuelta, filtros combinables.
+
+---
+
+## UI unificado
+
+`src/ui/` es una single-page app en HTML/CSS/JS puro (sin build step), servida
+como estáticos por `dataset-api` en `/ui/`. Un menú de 3 opciones cambia de
+vista sin recargar la página (`nav.js`):
+
+1. **Carga de archivos** — el formulario de subida (Camino 2) + listado con
+   preview de todos los datasets subidos.
+2. **Consulta de datos** — dos pestañas contra `/consulta/*`:
+   - *Precios de vivienda*: filtros de geografía y año, tabla con geografía,
+     nivel, periodo (año/trimestre) y precio €/m², ordenada alfabéticamente.
+   - *Indicadores socioeconómicos*: filtros de geografía, año y categoría, con
+     el filtro de indicador poblado dinámicamente según la categoría elegida
+     (dropdown dependiente).
+3. **Análisis y gráficos** — el mismo dashboard de Power BI embebido, dentro
+   del propio UI.
+
+`docs/index.html` (GitHub Pages) es una página **separada y deliberadamente
+más simple**: solo el dashboard de Power BI, sin las otras 2 vistas —
+GitHub Pages es hosting estático puro y no puede ejecutar `dataset-api`, así
+que "Carga de archivos" y "Consulta de datos" no tendrían backend con el que
+hablar ahí. Ambas páginas comparten la misma identidad visual (paleta azul
+institucional `#1D3557`, Georgia para títulos, Segoe UI para el resto).
 
 ---
 
@@ -363,10 +439,12 @@ docker exec -it prefect-worker python flows/03_dbt_run.py
 
 | Servicio | URL |
 |---|---|
+| UI unificado (carga + consulta + dashboard) | http://localhost:8000/ui/ |
 | API REST (docs) | http://localhost:8000/docs |
 | MinIO Console | http://localhost:9001 |
 | Prefect UI | http://localhost:4200 |
 | dbt docs | http://localhost:8080 |
+| Dashboard público (GitHub Pages, solo lectura) | https://paoeiri.github.io/datalakeUpload/docs/index.html |
 
 ---
 
@@ -431,19 +509,39 @@ Con el dataset de referencia cargado (por cualquiera de los dos caminos),
 
 ```
 dim_geografia            15 filas   (Málaga municipio = id_geografia 15)
-dim_tiempo              118 filas   (102 trimestres + 16 años)
+dim_tiempo              113 filas   (trimestres + años distintos entre las fuentes cargadas)
 dim_indicador            32 filas
 dim_tipo_vivienda         4 filas
-fact_precio_vivienda   1.530 filas
-fact_transacciones_inmobiliarias  352 filas
-fact_indicadores_anuales        1.381 filas
+fact_precio_vivienda   1.530 filas   (id_tiempo, id_geografia, precio_m2)
+fact_transacciones_inmobiliarias  356 filas   (id_tiempo, id_geografia, id_tipo_vivienda, num_transacciones)
+fact_indicadores_anuales        1.278 filas   (id_tiempo, id_geografia, id_indicador, valor)
 
 Done. PASS=72 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=72
 ```
 
+Las 3 tablas de hechos solo tienen claves foráneas y la métrica — sin columnas
+descriptivas duplicadas de sus dimensiones (nombre/nivel de geografía, año,
+nombre de indicador, etc.), para que el filtrado cruzado en Power BI funcione
+correctamente vía las relaciones del modelo (slicer sobre `dim_geografia[nombre]`
+filtra todas las tablas de hechos, no solo la que tuviera esa columna repetida).
+Las 13 tablas de `staging.*` llevan además `creado_en`/`actualizado_en`
+(poblados en cada `TRUNCATE + INSERT`, iguales entre sí porque no hay `UPDATE`
+de filas existentes — es solo trazabilidad de cuándo se cargó cada versión).
+
 Incluye la prueba de calidad de datos `assert_hombres_mujeres_igual_total`
 (`dbt/tests/`), que verifica que Hombres + Mujeres = Población total-m para cada año
-en la fuente INE 2882. El camino productivo (Camino 2) se ha probado end-to-end
-subiendo `69307.csv` y `2882.csv` reales vía la API: `fuentes_registradas`,
-`fuentes_registradas_historial` y `datasets_upload.vigente` quedan consistentes, y
-`dbt test` sigue en 72/72 tras el `dbt run` acotado.
+en la fuente INE 2882. Los `not_null` que dependen de huecos de publicación reales
+del INE (ej. años sin publicar todavía para un indicador concreto) están en
+`severity: warn` en vez de error — el filtro real de calidad vive en
+`int_indicadores_unificado.sql` (`valor IS NOT NULL`), que ya evita que esos huecos
+lleguen a `marts`.
+
+El camino productivo (Camino 2) se ha probado end-to-end subiendo ficheros reales
+vía la API — CSV (`69307.csv`, `2882.csv`, `31107.csv`) y XLS
+(`min_Transacciones...XLS`, incluyendo el caso de trimestre marcado como
+provisional por el INE, `"1º (*)"`) — y también con variantes de encoding
+reales (BOM UTF-8 vs. la codificación fija esperada por fuente, detectado y
+corregido automáticamente en `src/tasks/staging_fuentes.py`). En todos los
+casos `fuentes_registradas`, `fuentes_registradas_historial` y
+`datasets_upload.vigente` quedan consistentes, y `dbt test` sigue en 72/72
+tras el `dbt run` acotado.

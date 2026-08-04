@@ -1,115 +1,306 @@
-/* ====== ESTILOS GENERALES ====== */
-body {
-    font-family: "Segoe UI", Roboto, Arial, sans-serif;
-    background: #f5f7fa;
-    margin: 0;
-    padding: 20px;
-    color: #333;
+/* ====== TOKENS ====== */
+:root {
+    --azul: #1D3557;
+    --azul-claro: #C3CEDB;
+    --azul-medio: #9FB3CC;
+    --verde: #1D7A52;
+    --rojo: #A32D2D;
+    --texto: #141413;
+    --texto-secundario: #7C7B76;
+    --texto-terciario: #ADACA5;
+    --fondo: #FFFFFF;
+    --fondo-alterno: #F7F7F5;
+    --borde: #E5E4E4;
+    --tabla-header-bg: #F1EFE8;
+    --tabla-divisor: #EEEEE8;
+
+    --font-display: Georgia, Cambria, serif;
+    --font-body: "Segoe UI", Calibri, Arial, sans-serif;
 }
 
-h1 {
-    margin-bottom: 20px;
-    font-size: 28px;
-    color: #2c3e50;
+* {
+    box-sizing: border-box;
+}
+
+/* ====== BASE ====== */
+body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    margin: 0;
 }
 
 h2 {
-    margin-top: 30px;
-    font-size: 22px;
-    color: #34495e;
+    font-size: 24px;
+    color: var(--azul);
+    margin-bottom: 16px;
 }
 
-/* ====== CONTENEDORES ====== */
-section {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+h3 {
+    font-size: 18px;
+    color: var(--azul);
+}
+
+/* ====== HEADER ====== */
+.app-header {
+    background: var(--azul);
+    color: #FFFFFF;
+    padding: 32px 24px;
+    text-align: center;
+}
+
+.app-header h1 {
+    font-size: clamp(24px, 4vw, 36px);
+}
+
+.app-header p {
+    margin: 8px 0 0;
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--azul-claro);
+}
+
+/* ====== NAV PRINCIPAL ====== */
+.main-nav {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    background: var(--fondo-alterno);
+    border-bottom: 1px solid var(--borde);
+    padding: 0 24px;
+}
+
+.nav-btn {
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--texto-secundario);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 20px;
+    cursor: pointer;
+}
+
+.nav-btn:hover {
+    color: var(--azul);
+}
+
+.nav-btn.active {
+    color: var(--azul);
+    border-bottom-color: var(--azul);
+}
+
+/* ====== SUB-NAV (pestañas de Consulta de datos) ====== */
+.sub-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.subtab-btn {
+    background: var(--fondo);
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    color: var(--texto-secundario);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 8px 14px;
+    cursor: pointer;
+}
+
+.subtab-btn.active {
+    background: var(--azul);
+    border-color: var(--azul);
+    color: #FFFFFF;
+}
+
+.subtab {
+    display: none;
+}
+
+.subtab.active {
+    display: block;
+}
+
+/* ====== LAYOUT ====== */
+main {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 24px 48px;
+}
+
+.view {
+    display: none;
+}
+
+.view.active {
+    display: block;
+}
+
+/* ====== CARDS ====== */
+.card {
+    background: var(--fondo);
+    border-top: 2px solid var(--azul);
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(20, 20, 19, 0.06);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+/* ====== FILTROS / FORM ====== */
+.filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.filtros label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--texto-secundario);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+input[type="file"],
+select {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--texto);
+    background: var(--fondo);
+    border: 1px solid var(--borde);
+    border-radius: 4px;
+    padding: 8px 10px;
+    min-width: 200px;
 }
 
 /* ====== BOTONES ====== */
 button {
-    background: #3498db;
-    color: white;
+    background: var(--azul);
+    color: #FFFFFF;
     border: none;
-    padding: 10px 16px;
-    border-radius: 6px;
-    cursor: pointer;
+    border-radius: 4px;
+    padding: 9px 18px;
+    font-family: var(--font-body);
     font-size: 14px;
-    transition: 0.2s;
+    font-weight: 600;
+    cursor: pointer;
 }
 
 button:hover {
-    background: #2980b9;
+    background: #16283F;
 }
 
 button:active {
-    transform: scale(0.97);
+    transform: translateY(1px);
 }
 
-/* ====== INPUT FILE ====== */
-input[type="file"] {
-    padding: 8px;
-    background: #ecf0f1;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+/* ====== TABLAS ====== */
+.table-wrap {
+    overflow-x: auto;
 }
 
-/* ====== SELECT FUENTE ====== */
-select {
-    padding: 8px;
-    background: #ecf0f1;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    margin: 0 10px;
-    font-size: 14px;
-}
-
-/* ====== TABLA ====== */
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 15px;
     font-size: 14px;
+    font-variant-numeric: tabular-nums;
 }
 
-th {
-    background: #3498db;
-    color: white;
-    padding: 10px;
+thead th,
+table tr:first-child th {
+    background: var(--tabla-header-bg);
+    color: var(--azul);
+    font-weight: 700;
     text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--borde);
 }
 
 td {
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--tabla-divisor);
+    color: var(--texto);
 }
 
-tr:hover {
-    background: #f0f8ff;
+tbody tr:nth-child(even) {
+    background: var(--fondo-alterno);
 }
 
-/* ====== ESTADO (chips) ====== */
+td.empty {
+    text-align: center;
+    color: var(--texto-secundario);
+    padding: 24px;
+}
+
+/* ====== ESTADO (chips, reutilizado de la vista de carga) ====== */
 .status {
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-weight: bold;
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-weight: 600;
     font-size: 12px;
     text-transform: capitalize;
 }
 
 .status-ready {
-    background: #2ecc71;
-    color: white;
+    background: rgba(29, 122, 82, 0.12);
+    color: var(--verde);
 }
 
 .status-failed {
-    background: #e74c3c;
-    color: white;
+    background: rgba(163, 45, 45, 0.12);
+    color: var(--rojo);
 }
 
-.status-pending {
-    background: #f1c40f;
-    color: #333;
+.status-pending,
+.status-validating {
+    background: var(--fondo-alterno);
+    color: var(--texto-secundario);
+}
+
+/* ====== DASHBOARD (Power BI embebido) ====== */
+.dashboard-frame {
+    width: 100%;
+    max-width: 1280px;
+    aspect-ratio: 16 / 9;
+    margin: 0 auto;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 18px rgba(29, 53, 87, 0.15);
+    background: var(--fondo);
+}
+
+.dashboard-frame iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+}
+
+/* ====== FOOTER ====== */
+footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 13px;
+    color: var(--texto-terciario);
+    border-top: 1px solid var(--borde);
 }

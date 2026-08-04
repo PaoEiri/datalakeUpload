@@ -77,3 +77,59 @@ class DatasetPreviewResponse(BaseModel):
         "from_attributes": True,
         "populate_by_name": True,
     }
+
+
+# ---------------------------------------------------------------------------
+# Consulta de datos (solo lectura sobre core.*/marts.*)
+# ---------------------------------------------------------------------------
+class GeografiaOption(BaseModel):
+    id_geografia: int
+    nombre: str
+    nivel: str
+
+
+class GeografiasListResponse(BaseModel):
+    geografias: List[GeografiaOption]
+
+
+class AniosListResponse(BaseModel):
+    anios: List[int]
+
+
+class PrecioRow(BaseModel):
+    nombre_geografia: str
+    nivel_geografia: str
+    anio: int
+    trimestre: int
+    precio_m2: float
+
+
+class PrecioListResponse(BaseModel):
+    precios: List[PrecioRow]
+
+
+class CategoriasIndicadorListResponse(BaseModel):
+    categorias: List[str]
+
+
+class IndicadorOption(BaseModel):
+    id_indicador: int
+    nombre_indicador: str
+
+
+class IndicadoresListResponse(BaseModel):
+    indicadores: List[IndicadorOption]
+
+
+class IndicadorValorRow(BaseModel):
+    nombre_geografia: str
+    nivel_geografia: str
+    anio: int
+    categoria_indicador: str
+    nombre_indicador: str
+    valor: float
+    unidad: str
+
+
+class IndicadorValorListResponse(BaseModel):
+    valores: List[IndicadorValorRow]
