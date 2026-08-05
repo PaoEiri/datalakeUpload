@@ -21,6 +21,9 @@ data/processed/
 # disco, pero no forman parte del repo.
 dataset/
 
+# Notas/documentos de trabajo internos — se quedan en local
+consideraciones/
+
 # Notebooks checkpoints
 .ipynb_checkpoints/
 
