@@ -1,0 +1,38 @@
+version: 2
+
+sources:
+  - name: ml_registry
+    schema: public
+    description: "Tablas operativas del pipeline de ML — las escribe el flow de Python (flows/05_ml_train.py, src/tasks/ml.py), no una transformación SQL. Declaradas como source para que dbt/dim_modelo/fact_predicciones puedan leerlas. Ver consideraciones/instrucciones_ml_claude_code.md."
+    tables:
+      - name: predicciones_ml_raw
+        description: "Predicciones del modelo champion de precio_m2 (variación trimestral), backtesting + forecast recursivo, antes de resolver id_tiempo. Ver dbt/models/marts/fact_predicciones.sql."
+        columns:
+          - name: id_prediccion
+          - name: id_geografia
+          - name: anio
+          - name: trimestre
+          - name: id_modelo
+            description: "FK a ml_model_registry"
+          - name: precio_predicho
+          - name: intervalo_inferior
+          - name: intervalo_superior
+          - name: es_forecast
+          - name: creado_en
+
+      - name: ml_model_registry
+        description: "Registro de modelos entrenados (champion/challenger). Ver dbt/models/core/dim_modelo.sql."
+        columns:
+          - name: id_modelo
+          - name: version
+          - name: algoritmo
+            description: "'naive', 'ridge' o 'xgboost'"
+          - name: fecha_entrenamiento
+          - name: hiperparametros
+          - name: r2
+          - name: accuracy_direccional
+          - name: rmse
+          - name: mae
+          - name: es_champion
+          - name: ruta_minio_modelo
+          - name: ruta_minio_shap

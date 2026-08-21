@@ -44,3 +44,11 @@ models:
         tests: [not_null, unique]
       - name: nombre_indicador
         tests: [not_null]
+
+  - name: dim_modelo
+    description: "Registro de modelos de ML entrenados (champion/challenger). Ver src/tasks/ml.py."
+    columns:
+      - name: id_modelo
+        tests: [not_null, unique]
+      - name: nombre_modelo
+        tests: [not_null]

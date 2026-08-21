@@ -127,6 +127,45 @@ sources:
           - name: actualizado_en
             description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
 
+      - name: ine_uso_suelo
+        description: "INE tabla 69333 — Uso del suelo y superficie, municipal de Málaga"
+        columns:
+          - name: Municipios
+          - name: Indicadores
+          - name: Periodo
+          - name: Total
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
+
+      - name: ine_hogares_vivienda_seguridad
+        description: "INE tabla 69330 — Hogares, vivienda y seguridad, municipal de Málaga"
+        columns:
+          - name: Municipios
+          - name: Indicadores
+          - name: Periodo
+          - name: Total
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
+
+      - name: ine_desigualdad_renta
+        description: "INE tabla 31111 — Distribución de la renta por unidad de consumo, municipal y distrital de Málaga"
+        columns:
+          - name: Municipios
+          - name: Distritos
+          - name: Secciones
+          - name: Sexo
+          - name: "Distribucion de la renta por unidad de consumo"
+          - name: Periodo
+          - name: Total
+          - name: creado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a actualizado_en, no hay UPDATE de filas)"
+          - name: actualizado_en
+            description: "Timestamp de la carga TRUNCATE+INSERT (igual a creado_en, no hay UPDATE de filas)"
+
       - name: transacciones_libre
         description: "Transacciones inmobiliarias de vivienda libre, municipio de Málaga (Ministerio de Transportes y Movilidad Sostenible)"
         columns:

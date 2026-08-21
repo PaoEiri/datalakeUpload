@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
-from .models import Dataset, FuenteRegistrada, FuenteRegistradaHistorial
+from .models import Dataset, FuenteRegistrada, FuenteRegistradaHistorial, MLModelRegistry, PrediccionMLRaw
 
 
 def resolve_dataset_name(db: Session, original_filename: str) -> str:
@@ -162,3 +162,85 @@ def get_vigente_dataset_por_fuente(db: Session, id_fuente: int) -> Optional[Data
     if fuente is None or fuente.id_dataset_actual is None:
         return None
     return get_dataset(db, fuente.id_dataset_actual)
+
+
+# ---------------------------------------------------------
+# ml_model_registry / fact_predicciones
+# ---------------------------------------------------------
+def create_model_registry_entry(
+    db: Session,
+    version: str,
+    algoritmo: str,
+    hiperparametros: Optional[dict],
+    r2: float,
+    accuracy_direccional: float,
+    rmse: float,
+    mae: float,
+    ruta_minio_modelo: Optional[str] = None,
+    ruta_minio_shap: Optional[str] = None,
+    indicadores_usados: Optional[list] = None,
+    importancia_features: Optional[list] = None,
+) -> MLModelRegistry:
+    modelo = MLModelRegistry(
+        version=version,
+        algoritmo=algoritmo,
+        hiperparametros=hiperparametros,
+        indicadores_usados=indicadores_usados,
+        importancia_features=importancia_features,
+        r2=r2,
+        accuracy_direccional=accuracy_direccional,
+        rmse=rmse,
+        mae=mae,
+        ruta_minio_modelo=ruta_minio_modelo,
+        ruta_minio_shap=ruta_minio_shap,
+    )
+    db.add(modelo)
+    db.commit()
+    db.refresh(modelo)
+    return modelo
+
+
+def set_champion(db: Session, id_modelo: int) -> MLModelRegistry:
+    """Marca id_modelo como el único champion activo (desmarca cualquier otro)."""
+    db.query(MLModelRegistry).filter(MLModelRegistry.id_modelo != id_modelo).update(
+        {"es_champion": False}
+    )
+    modelo = db.execute(select(MLModelRegistry).filter_by(id_modelo=id_modelo)).scalar_one_or_none()
+    if modelo is None:
+        raise ValueError(f"Modelo {id_modelo} no encontrado")
+    modelo.es_champion = True
+    db.commit()
+    db.refresh(modelo)
+    return modelo
+
+
+def get_champion_model(db: Session) -> Optional[MLModelRegistry]:
+    result = db.execute(select(MLModelRegistry).filter_by(es_champion=True))
+    return result.scalar_one_or_none()
+
+
+def create_prediccion(
+    db: Session,
+    id_geografia: int,
+    anio: int,
+    trimestre: int,
+    id_modelo: int,
+    precio_predicho: float,
+    es_forecast: bool,
+    intervalo_inferior: Optional[float] = None,
+    intervalo_superior: Optional[float] = None,
+) -> PrediccionMLRaw:
+    prediccion = PrediccionMLRaw(
+        id_geografia=id_geografia,
+        anio=anio,
+        trimestre=trimestre,
+        id_modelo=id_modelo,
+        precio_predicho=precio_predicho,
+        intervalo_inferior=intervalo_inferior,
+        intervalo_superior=intervalo_superior,
+        es_forecast=es_forecast,
+    )
+    db.add(prediccion)
+    db.commit()
+    db.refresh(prediccion)
+    return prediccion

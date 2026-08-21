@@ -17,6 +17,7 @@
     <button class="nav-btn active" data-view="view-carga" onclick="switchView('view-carga')">Carga de archivos</button>
     <button class="nav-btn" data-view="view-consulta" onclick="switchView('view-consulta')">Consulta de datos</button>
     <button class="nav-btn" data-view="view-analisis" onclick="switchView('view-analisis')">Análisis y gráficos</button>
+    <button class="nav-btn" data-view="view-indicadores" onclick="switchView('view-indicadores')">Indicadores</button>
 </nav>
 
 <main>
@@ -132,6 +133,36 @@
         </div>
     </section>
 
+    <!-- Vista 4: Indicadores (activar/desactivar) -->
+    <section id="view-indicadores" class="view">
+        <section class="card">
+            <h2>Indicadores de referencia</h2>
+            <p>Activa/desactiva cada indicador a nivel municipal o distrital según su cobertura de datos real. Los cambios se reflejan de inmediato en las consultas, pero <code>marts.fact_indicadores_anuales</code> necesita "Aplicar cambios" para actualizarse.</p>
+            <div class="filtros">
+                <button onclick="loadIndicadores()">Refrescar</button>
+                <button onclick="aplicarCambios()">Aplicar cambios (dbt run)</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Indicador</th>
+                            <th>Categoría</th>
+                            <th>Descripción</th>
+                            <th>Municipal</th>
+                            <th>Cobertura Municipal</th>
+                            <th>Distrital</th>
+                            <th>Cobertura Distrital</th>
+                            <th>Usar en ML</th>
+                            <th>Notas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="indicadores-ref-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+
 </main>
 
 <footer>
@@ -142,6 +173,7 @@
 <script src="/ui/upload.js"></script>
 <script src="/ui/list.js"></script>
 <script src="/ui/consulta.js"></script>
+<script src="/ui/indicadores.js"></script>
 <script>
     window.onload = () => {
         loadFuentes();

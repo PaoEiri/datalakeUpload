@@ -133,3 +133,68 @@ class IndicadorValorRow(BaseModel):
 
 class IndicadorValorListResponse(BaseModel):
     valores: List[IndicadorValorRow]
+
+
+# ---------------------------------------------------------------------------
+# Indicadores de referencia (activar/desactivar aplica_municipal/distrital)
+# ---------------------------------------------------------------------------
+class IndicadorReferenciaRow(BaseModel):
+    indicador_id: int
+    nombre_indicador: str
+    categoria_indicador: str
+    descripcion: str
+    aplica_municipal: bool
+    aplica_distrital: bool
+    usar_en_ml: bool
+    cobertura_municipal_pct: Optional[float] = None
+    cobertura_distrital_pct: Optional[float] = None
+    notas_adaptacion: Optional[str] = None
+
+
+class IndicadoresReferenciaListResponse(BaseModel):
+    indicadores: List[IndicadorReferenciaRow]
+
+
+class ToggleIndicadorRequest(BaseModel):
+    nivel: str = Field(pattern="^(municipal|distrital|ml)$")
+    activo: bool
+
+
+class ToggleIndicadorResponse(BaseModel):
+    indicador_id: int
+    nivel: str
+    activo: bool
+
+
+class AplicarCambiosResponse(BaseModel):
+    message: str
+
+
+class EditarIndicadorRequest(BaseModel):
+    descripcion: str
+    notas_adaptacion: Optional[str] = None
+
+
+class EditarIndicadorResponse(BaseModel):
+    indicador_id: int
+    descripcion: str
+    notas_adaptacion: Optional[str] = None
+
+
+# ---------------------------------------------------------------------------
+# Predicciones (modelo de ML champion)
+# ---------------------------------------------------------------------------
+class PrediccionRow(BaseModel):
+    nombre_geografia: str
+    anio: int
+    trimestre: int
+    precio_predicho: float
+    intervalo_inferior: Optional[float] = None
+    intervalo_superior: Optional[float] = None
+    es_forecast: bool
+    version_modelo: str
+    algoritmo: str
+
+
+class PrediccionesListResponse(BaseModel):
+    predicciones: List[PrediccionRow]

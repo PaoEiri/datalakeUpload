@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: v_indicadores_cobertura
+    description: >
+      Vista de diagnóstico (no de negocio): años con dato real vs rango
+      declarado en el seed, por indicador y nivel geográfico. Incluye
+      indicadores activos e inactivos, para decidir manualmente (vía
+      aplica_municipal/aplica_distrital en reference.seed_indicadores_fuentes)
+      qué indicadores tienen datos suficientes antes de la siguiente carga.

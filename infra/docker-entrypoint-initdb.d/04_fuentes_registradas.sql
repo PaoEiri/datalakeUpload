@@ -40,6 +40,9 @@ VALUES
     ('INE', '69303', 'Municipio', 'stg_indicadores_malaga'),
     ('INE', '69301', 'Municipio', 'stg_indicadores_demograficos_municipio'),
     ('INE', '69307', 'Municipio', 'stg_indicadores_turismo'),
+    ('INE', '69333', 'Municipio', 'stg_indicadores_uso_suelo'),
+    ('INE', '69330', 'Municipio', 'stg_indicadores_hogares_vivienda_seguridad'),
+    ('INE', '31111', 'Distrito',  'stg_indicadores_desigualdad_renta'),
 
     ('Tinsa', 'tinsa_precios', 'Multiescala', 'stg_precios_tinsa'),
 

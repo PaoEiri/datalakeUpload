@@ -1,4 +1,5 @@
 let consultaCargada = false;
+let indicadoresCargados = false;
 
 function switchView(viewId) {
     document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
@@ -10,6 +11,11 @@ function switchView(viewId) {
     if (viewId === "view-consulta" && !consultaCargada) {
         consultaCargada = true;
         initConsulta();
+    }
+
+    if (viewId === "view-indicadores" && !indicadoresCargados) {
+        indicadoresCargados = true;
+        loadIndicadores();
     }
 }
 

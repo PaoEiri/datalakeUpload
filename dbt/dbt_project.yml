@@ -20,6 +20,9 @@ models:
     marts:
       +schema: marts
       +materialized: table
+    reporting:
+      +schema: reporting
+      +materialized: view
 
 # dbt/seeds/ queda vacío a propósito: dim_geografia, seed_geografia_tinsa y
 # seed_indicadores_fuentes se migraron a tablas normales en el esquema

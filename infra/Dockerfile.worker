@@ -3,6 +3,8 @@ FROM prefecthq/prefect:3.6.12-python3.11
 RUN pip install --no-cache-dir \
     xgboost \
     scikit-learn \
+    shap \
+    matplotlib \
     pandas \
     numpy \
     pyyaml \

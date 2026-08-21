@@ -66,3 +66,27 @@ models:
               field: id_indicador
       - name: valor
         description: "Valor del indicador"
+
+  - name: fact_predicciones
+    description: "Predicciones del modelo champion de precio_m2 por tiempo, geografía y modelo - lista para Power BI"
+    columns:
+      - name: id_tiempo
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_tiempo')
+              field: id_tiempo
+      - name: id_geografia
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_geografia')
+              field: id_geografia
+      - name: id_modelo
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_modelo')
+              field: id_modelo
+      - name: precio_predicho
+        description: "Precio €/m² predicho (backtesting o forecast, ver es_forecast)"

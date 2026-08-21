@@ -214,6 +214,22 @@ PARSERS: dict[str, tuple[str, Callable[[bytes], pd.DataFrame]]] = {
         "ine_turismo",
         _make_ine_parser("latin-1", _filtro_malaga_texto, drop=["Total Nacional"]),
     ),
+    "69333": (
+        "ine_uso_suelo",
+        _make_ine_parser("latin-1", _filtro_malaga_texto, drop=["Total Nacional"]),
+    ),
+    "69330": (
+        "ine_hogares_vivienda_seguridad",
+        _make_ine_parser("latin-1", _filtro_malaga_texto, drop=["Total Nacional"]),
+    ),
+    "31111": (
+        "ine_desigualdad_renta",
+        _make_ine_parser(
+            "latin-1",
+            _filtro_malaga_con_distrito,
+            rename={"Distribución de la renta por unidad de consumo": "Distribucion de la renta por unidad de consumo"},
+        ),
+    ),
     "transacciones_libre": ("transacciones_libre", _make_transacciones_parser()),
     "transacciones_segunda_mano": ("transacciones_segunda_mano", _make_transacciones_parser()),
     "transacciones_nueva": ("transacciones_nueva", _make_transacciones_parser()),

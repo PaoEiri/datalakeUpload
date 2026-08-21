@@ -24,6 +24,12 @@ WITH union_indicadores AS (
     SELECT * FROM "postgres"."staging"."stg_indicadores_demograficos_municipio"
     UNION ALL
     SELECT * FROM "postgres"."staging"."stg_indicadores_turismo"
+    UNION ALL
+    SELECT * FROM "postgres"."staging"."stg_indicadores_uso_suelo"
+    UNION ALL
+    SELECT * FROM "postgres"."staging"."stg_indicadores_hogares_vivienda_seguridad"
+    UNION ALL
+    SELECT * FROM "postgres"."staging"."stg_indicadores_desigualdad_renta"
 ),
 
 -- id_indicador canónico: para conceptos con varias fuentes (concepto_id),

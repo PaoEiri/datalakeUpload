@@ -4,6 +4,8 @@ from fastapi.staticfiles import StaticFiles
 from .datasets import router as dataset_router
 from .fuentes import router as fuentes_router
 from .consulta import router as consulta_router
+from .indicadores_referencia import router as indicadores_referencia_router
+from .predicciones import router as predicciones_router
 from src.config import settings
 from src.storage.minio_client import MinioClient
 
@@ -25,6 +27,10 @@ app.add_middleware(
 app.include_router(dataset_router, prefix="/datasets_upload", tags=["datasets_upload"])
 app.include_router(fuentes_router, prefix="/fuentes_registradas", tags=["fuentes_registradas"])
 app.include_router(consulta_router, prefix="/consulta", tags=["consulta"])
+app.include_router(
+    indicadores_referencia_router, prefix="/indicadores_referencia", tags=["indicadores_referencia"]
+)
+app.include_router(predicciones_router, prefix="/predicciones", tags=["predicciones"])
 
 
 @app.on_event("startup")
