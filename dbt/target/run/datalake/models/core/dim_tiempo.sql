@@ -5,10 +5,28 @@
   create  table "postgres"."core"."dim_tiempo__dbt_tmp"
   
   
-    as
+    
+  
+  (
+    id_tiempo bigint not null,
+    anio integer not null,
+    trimestre integer,
+    granularidad text not null,
+    fecha date,
+    es_futuro boolean,
+    
+    primary key (id_tiempo)
+    )
+ ;
+    insert into "postgres"."core"."dim_tiempo__dbt_tmp" (
+      id_tiempo, anio, trimestre, granularidad, fecha, es_futuro
+    )
   
   (
     
+    select id_tiempo, anio, trimestre, granularidad, fecha, es_futuro
+    from (
+        
 
 -- NO marcar como "Date Table" en Power BI: mezcla granularidad trimestral
 -- (precios/transacciones) y anual (indicadores).
@@ -68,5 +86,6 @@ SELECT
 FROM periodos
 WHERE anio IS NOT NULL
 ORDER BY anio, trimestre NULLS FIRST
+    ) as model_subq
   );
   

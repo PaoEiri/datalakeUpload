@@ -5,10 +5,29 @@
   create  table "postgres"."core"."dim_indicador__dbt_tmp"
   
   
-    as
+    
+  
+  (
+    id_indicador integer not null,
+    descripcion text,
+    nombre_indicador text not null,
+    categoria_indicador text,
+    unidad text,
+    es_indice_porcentaje integer,
+    tipo_indicador text,
+    
+    primary key (id_indicador)
+    )
+ ;
+    insert into "postgres"."core"."dim_indicador__dbt_tmp" (
+      id_indicador, descripcion, nombre_indicador, categoria_indicador, unidad, es_indice_porcentaje, tipo_indicador
+    )
   
   (
     
+    select id_indicador, descripcion, nombre_indicador, categoria_indicador, unidad, es_indice_porcentaje, tipo_indicador
+    from (
+        
 
 -- Colapsa seed_indicadores_fuentes (37 filas) a 32 filas de negocio vía
 -- concepto_id: cuando varias fuentes miden el mismo concepto, se conserva
@@ -44,5 +63,6 @@ SELECT
     tipo_indicador
 FROM canonico
 WHERE indicador_id = id_indicador_canonico
+    ) as model_subq
   );
   

@@ -3,34 +3,98 @@ version: 2
 models:
   - name: dim_geografia
     description: "Dimensión de geografía (15 filas: 11 distritos, Málaga municipio, Málaga provincia, Andalucía, España)"
+    config:
+      contract:
+        enforced: true
+    constraints:
+      - type: primary_key
+        columns: [id_geografia]
     columns:
       - name: id_geografia
+        data_type: integer
+        constraints:
+          - type: not_null
         tests: [not_null, unique]
       - name: nombre
+        data_type: text
+        constraints:
+          - type: not_null
         tests: [not_null]
+      - name: codigo_ine
+        data_type: character varying(10)
+      - name: es_codigo_oficial_ine
+        data_type: boolean
       - name: nivel
+        data_type: text
+        constraints:
+          - type: not_null
         tests:
+          - not_null
           - accepted_values:
               values: ['Distrito', 'Municipio', 'Provincia', 'Comunidad Autónoma', 'País']
+      - name: nivel_orden
+        data_type: integer
+      - name: codigo_municipio
+        data_type: integer
+      - name: codigo_provincia
+        data_type: integer
+      - name: codigo_ccaa
+        data_type: integer
+      - name: codigo_pais
+        data_type: integer
 
   - name: dim_tiempo
     description: "Dimensión de tiempo, granularidad trimestral (precios/transacciones) y anual (indicadores). NO usar como Date Table en Power BI"
+    config:
+      contract:
+        enforced: true
+    constraints:
+      - type: primary_key
+        columns: [id_tiempo]
     columns:
       - name: id_tiempo
+        data_type: bigint
+        constraints:
+          - type: not_null
         tests: [not_null, unique]
       - name: anio
+        data_type: integer
+        constraints:
+          - type: not_null
         tests: [not_null]
+      - name: trimestre
+        data_type: integer
       - name: granularidad
+        data_type: text
+        constraints:
+          - type: not_null
         tests:
+          - not_null
           - accepted_values:
               values: ['Trimestral', 'Anual']
+      - name: fecha
+        data_type: date
+      - name: es_futuro
+        data_type: boolean
 
   - name: dim_tipo_vivienda
     description: "4 tipos atómicos de vivienda para transacciones inmobiliarias (sin fila 'total')"
+    config:
+      contract:
+        enforced: true
+    constraints:
+      - type: primary_key
+        columns: [id_tipo_vivienda]
     columns:
       - name: id_tipo_vivienda
+        data_type: integer
+        constraints:
+          - type: not_null
         tests: [not_null, unique]
       - name: nombre_tipo
+        data_type: text
+        constraints:
+          - type: not_null
         tests:
           - not_null
           - unique
@@ -38,17 +102,69 @@ models:
               values: ['libre', 'segunda mano', 'nueva', 'protegida']
 
   - name: dim_indicador
-    description: "32 indicadores socioeconómicos del INE, colapsados por concepto_id desde seed_indicadores_fuentes (37 filas)"
+    description: "78 indicadores socioeconómicos del INE, colapsados por concepto_id desde seed_indicadores_fuentes (80 filas)"
+    config:
+      contract:
+        enforced: true
+    constraints:
+      - type: primary_key
+        columns: [id_indicador]
     columns:
       - name: id_indicador
+        data_type: integer
+        constraints:
+          - type: not_null
         tests: [not_null, unique]
+      - name: descripcion
+        data_type: text
       - name: nombre_indicador
+        data_type: text
+        constraints:
+          - type: not_null
         tests: [not_null]
+      - name: categoria_indicador
+        data_type: text
+      - name: unidad
+        data_type: text
+      - name: es_indice_porcentaje
+        data_type: integer
+      - name: tipo_indicador
+        data_type: text
 
   - name: dim_modelo
     description: "Registro de modelos de ML entrenados (champion/challenger). Ver src/tasks/ml.py."
+    config:
+      contract:
+        enforced: true
+    constraints:
+      - type: primary_key
+        columns: [id_modelo]
     columns:
       - name: id_modelo
+        data_type: integer
+        constraints:
+          - type: not_null
         tests: [not_null, unique]
       - name: nombre_modelo
+        data_type: character varying(20)
+        constraints:
+          - type: not_null
         tests: [not_null]
+      - name: version
+        data_type: character varying(50)
+      - name: fecha_entrenamiento
+        data_type: timestamp without time zone
+      - name: es_champion
+        data_type: boolean
+      - name: r2
+        data_type: numeric(10,6)
+      - name: rmse
+        data_type: numeric(18,6)
+      - name: mae
+        data_type: numeric(18,6)
+      - name: accuracy_direccional
+        data_type: numeric(10,6)
+      - name: indicadores_usados
+        data_type: json
+      - name: importancia_features
+        data_type: json

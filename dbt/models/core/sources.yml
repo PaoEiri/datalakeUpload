@@ -26,7 +26,7 @@ sources:
           - name: id_geografia
 
       - name: seed_indicadores_fuentes
-        description: "37 filas: metadatos de carga (curaduría aplica_municipal/aplica_distrital, concepto_id)"
+        description: "80 filas: metadatos de carga (curaduría aplica_municipal/aplica_distrital, concepto_id)"
         columns:
           - name: indicador_id
           - name: descripcion

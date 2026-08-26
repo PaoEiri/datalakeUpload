@@ -5,10 +5,26 @@
   create  table "postgres"."marts"."fact_transacciones_inmobiliarias__dbt_tmp"
   
   
-    as
+    
+  
+  (
+    id_tiempo bigint not null references "postgres"."core"."dim_tiempo" (id_tiempo),
+    id_geografia integer not null references "postgres"."core"."dim_geografia" (id_geografia),
+    id_tipo_vivienda integer not null references "postgres"."core"."dim_tipo_vivienda" (id_tipo_vivienda),
+    num_transacciones integer,
+    
+    unique (id_tiempo, id_geografia, id_tipo_vivienda)
+    )
+ ;
+    insert into "postgres"."marts"."fact_transacciones_inmobiliarias__dbt_tmp" (
+      id_tiempo, id_geografia, id_tipo_vivienda, num_transacciones
+    )
   
   (
     
+    select id_tiempo, id_geografia, id_tipo_vivienda, num_transacciones
+    from (
+        
 
 -- Grano: tiempo (trimestral) x geografía (municipio) x tipo_vivienda -> num_transacciones
 -- Hoy solo id_geografia del municipio de Málaga (ver int_transacciones_unificado.sql).
@@ -21,5 +37,6 @@ SELECT
 FROM "postgres"."intermediate"."int_transacciones_unificado" it
 LEFT JOIN "postgres"."core"."dim_tiempo"        dt  ON it.anio = dt.anio AND it.trimestre = dt.trimestre
 LEFT JOIN "postgres"."core"."dim_tipo_vivienda" dtv ON it.tipo_vivienda = dtv.nombre_tipo
+    ) as model_subq
   );
   

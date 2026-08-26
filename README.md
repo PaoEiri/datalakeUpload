@@ -647,7 +647,7 @@ warning restante es un hueco de publicación real del INE, ver más abajo):
 
 ```
 dim_geografia            15 filas   (Málaga municipio = id_geografia 15)
-dim_tiempo              143 filas   (trimestres + años reales, más 12 trimestres futuros sintéticos)
+dim_tiempo              129 filas   (trimestres + años reales, más 12 trimestres futuros sintéticos)
 dim_indicador            78 filas
 dim_tipo_vivienda         4 filas
 dim_modelo               11 filas   (modelos de ML entrenados, ver Pipeline de Machine Learning)

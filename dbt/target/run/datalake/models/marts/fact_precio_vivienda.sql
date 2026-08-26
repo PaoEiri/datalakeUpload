@@ -5,10 +5,25 @@
   create  table "postgres"."marts"."fact_precio_vivienda__dbt_tmp"
   
   
-    as
+    
+  
+  (
+    id_tiempo bigint not null references "postgres"."core"."dim_tiempo" (id_tiempo),
+    id_geografia integer not null references "postgres"."core"."dim_geografia" (id_geografia),
+    precio_m2 numeric(18,4),
+    
+    unique (id_tiempo, id_geografia)
+    )
+ ;
+    insert into "postgres"."marts"."fact_precio_vivienda__dbt_tmp" (
+      id_tiempo, id_geografia, precio_m2
+    )
   
   (
     
+    select id_tiempo, id_geografia, precio_m2
+    from (
+        
 
 -- Grano: tiempo (trimestral) x geografía -> precio_m2
 -- Solo FKs + métrica: los atributos descriptivos (anio, trimestre, fecha,
@@ -21,5 +36,6 @@ SELECT
     ip.precio_m2
 FROM "postgres"."intermediate"."int_precios_vivienda_unificado" ip
 LEFT JOIN "postgres"."core"."dim_tiempo" dt ON ip.anio = dt.anio AND ip.trimestre = dt.trimestre
+    ) as model_subq
   );
   
