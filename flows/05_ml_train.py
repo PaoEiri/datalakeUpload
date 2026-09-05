@@ -1,7 +1,7 @@
 """Flow de entrenamiento del modelo de predicción de precio_m2 (municipal).
 
 Uso manual: docker exec -it prefect-worker python flows/05_ml_train.py
-Ver consideraciones/instrucciones_ml_claude_code.md para el diseño completo.
+Ver consideraciones/especificacion_ml.md para el diseño completo.
 """
 from prefect import flow, get_run_logger
 

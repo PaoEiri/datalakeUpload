@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: ml_registry
     schema: public
-    description: "Tablas operativas del pipeline de ML — las escribe el flow de Python (flows/05_ml_train.py, src/tasks/ml.py), no una transformación SQL. Declaradas como source para que dbt/dim_modelo/fact_predicciones puedan leerlas. Ver consideraciones/instrucciones_ml_claude_code.md."
+    description: "Tablas operativas del pipeline de ML — las escribe el flow de Python (flows/05_ml_train.py, src/tasks/ml.py), no una transformación SQL. Declaradas como source para que dbt/dim_modelo/fact_predicciones puedan leerlas. Ver consideraciones/especificacion_ml.md."
     tables:
       - name: predicciones_ml_raw
         description: "Predicciones del modelo champion de precio_m2 (variación trimestral), backtesting + forecast recursivo, antes de resolver id_tiempo. Ver dbt/models/marts/fact_predicciones.sql."

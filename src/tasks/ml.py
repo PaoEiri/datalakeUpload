@@ -1,5 +1,5 @@
 """Pipeline de ML: predicción de la variación trimestral (%) de precio_m2 a
-nivel municipal (Málaga). Ver consideraciones/instrucciones_ml_claude_code.md
+nivel municipal (Málaga). Ver consideraciones/especificacion_ml.md
 para el diseño completo.
 
 Todas las tasks son sync (mismo estilo que src/tasks/dbt.py y
@@ -53,43 +53,40 @@ LAG_COLS = ["precio_m2_lag1", "precio_m2_lag4", "precio_m2_lag8", "num_transacci
 BASE_FEATURE_COLS = LAG_COLS + ["variacion_interanual", "is_estimated"]
 
 TRAIN_ANIOS = (2010, 2022)
-# Ventana de validación amplia a propósito: con solo 8 trimestres (2023-2024)
-# el R² es extremadamente inestable — esos trimestres tuvieron variación de
-# precio inusualmente estable (poca varianza), así que cualquier sesgo
-# pequeño hundía el R² sin reflejar una diferencia real de calidad entre
-# modelos (verificado en sesión: el mismo modelo pasaba de R²=0.69 a -1.04
-# solo por variar 2 features, con folds idénticos en todo lo demás).
+# Ventana de validación: 8 trimestres (2023-2024) dan un R² muy inestable,
+# ya que ese tramo tuvo variación de precio inusualmente estable (poca
+# varianza) y cualquier sesgo pequeño hunde la métrica sin reflejar una
+# diferencia real de calidad entre modelos (un mismo modelo pasa de R²=0.69
+# a -1.04 solo por variar 2 features, con folds idénticos en todo lo demás).
 # 2019-2024 (24 trimestres) incluye el shock de la COVID y da una medición
-# mucho más robusta.
+# más robusta.
 #
-# Se probó ampliar a (2019, 2026) para no dejar fuera el sesgo de
-# subestimación que se detectó en 2025-2026 (ver _extender_indicadores_anuales)
-# — pero eso reintrodujo un problema distinto y más grave: la misma ventana
-# que decide variables/hiperparámetros/modelo campeón terminaba siendo
-# también la que se reportaba como métrica final, sobreajustando el número
-# reportado a fuerza de iterar sobre ella. Se revirtió a (2019, 2024) y esos
-# 6 trimestres (2025T1-2026T2) se separaron como HOLDOUT_DESDE_ANIO: un
-# conjunto de prueba genuino, nunca visto durante el desarrollo, evaluado
-# una sola vez al final (ver _evaluar_holdout más abajo).
+# Ampliar a (2019, 2026) evita dejar fuera el sesgo de subestimación de
+# 2025-2026 (ver _extender_indicadores_anuales), pero introduce un problema
+# más grave: la misma ventana que decide variables/hiperparámetros/modelo
+# campeón terminaría siendo también la que reporta la métrica final,
+# sobreajustando el número reportado a fuerza de iterar sobre ella. Por eso
+# se mantiene (2019, 2024) y los 6 trimestres restantes (2025T1-2026T2) se
+# separan como HOLDOUT_DESDE_ANIO: un conjunto de prueba genuino, nunca
+# visto durante el desarrollo, evaluado una sola vez al final (ver
+# _evaluar_holdout más abajo).
 VAL_ANIOS = (2019, 2024)
 
-# Primer año del holdout final — separado por completo de todo el proceso
-# de desarrollo (selección de variables, búsqueda de hiperparámetros,
-# comparación walk-forward entre modelos). Son los mismos 6 trimestres
-# (2025T1-2026T2) donde se detectó el sesgo de subestimación de la sección
-# de arriba — ya sabíamos que eran los trimestres más informativos para
-# medir generalización real, así que se usan también como el holdout.
+# Primer año del holdout final, separado por completo del proceso de
+# desarrollo (selección de variables, búsqueda de hiperparámetros,
+# comparación walk-forward entre modelos). Coincide con los 6 trimestres
+# (2025T1-2026T2) donde se detectó el sesgo de subestimación de arriba, los
+# más informativos para medir generalización real.
 HOLDOUT_DESDE_ANIO = 2025
 
-# Indicadores con tendencia clara y consistente (verificado en sesión sobre
-# su histórico completo: suben o bajan año a año sin reversiones relevantes
-# en la última década) — se extrapolan hacia adelante en vez de congelarse
-# en el último valor real, tanto en build_features (trimestres recientes sin
-# dato real de indicador todavía, ej. 2025-2026) como en forecast_recursivo
-# (forecast puro). Deliberadamente NO incluye Tasa de desempleo (23): tuvo
-# un ciclo completo de subida y bajada dentro del propio rango de
-# entrenamiento (2010-2024), así que asumir que la tendencia reciente
-# continúa sería más arriesgado que congelarlo. Cualquier indicador nuevo
+# Indicadores con tendencia anual clara y consistente (suben o bajan año a
+# año sin reversiones relevantes en la última década): se extrapolan hacia
+# adelante en vez de congelarse en el último valor real, tanto en
+# build_features (trimestres recientes sin dato de indicador todavía, ej.
+# 2025-2026) como en forecast_recursivo. Excluye deliberadamente la Tasa de
+# desempleo (23), que tuvo un ciclo completo de subida y bajada dentro del
+# rango de entrenamiento (2010-2024) — asumir que la tendencia reciente
+# continúa sería más arriesgado que congelarla. Cualquier indicador nuevo
 # que no esté en este set se congela por defecto (opción conservadora).
 INDICADORES_TENDENCIA_IDS = {24, 27, 33, 47, 73}
 ANIOS_TENDENCIA = 3  # ventana de años recientes para estimar la tasa de crecimiento
@@ -104,10 +101,10 @@ def _extender_indicadores_anuales(
     ANIOS_TENDENCIA años reales); el resto se congela en el último valor
     real (ffill plano) — mismo criterio que forecast_recursivo.
 
-    Se detectó en sesión que el ffill plano original sesgaba
-    sistemáticamente a la baja el backtesting de trimestres recientes sin
-    dato de indicador todavía (2025-2026): el precio real seguía subiendo
-    mientras el modelo veía renta/alquiler/etc. "congelados" en 2023-2024.
+    El ffill plano sesga sistemáticamente a la baja el backtesting de
+    trimestres recientes sin dato de indicador todavía (2025-2026): el
+    precio real sigue subiendo mientras el modelo ve renta/alquiler/etc.
+    "congelados" en 2023-2024.
     """
     slug_to_id = {v: k for k, v in id_to_slug.items()}
     resultado = ind_wide.reindex(range(anio_min, anio_max + 1)).sort_index().copy()

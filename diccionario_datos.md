@@ -724,4 +724,4 @@ Vista de diagnóstico (no de negocio): años con dato real vs rango declarado en
 
 
 ---
-*Diccionario generado automáticamente a partir de catalog.json y manifest.json (50 relaciones documentadas), con descripciones completadas manualmente.*
+*Diccionario de datos mantenido a partir del esquema real de la base de datos y de las relaciones definidas en el proyecto dbt (50 relaciones documentadas).*

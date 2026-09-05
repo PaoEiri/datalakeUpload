@@ -58,8 +58,8 @@ La arquitectura separa claramente las responsabilidades en capas:
 - **Orquestación**: flujos de Prefect que validan, extraen metadatos, cargan a staging y ejecutan dbt de forma acotada a la fuente actualizada
 - **Data Warehouse**: modelo multi dimensional en cuatro capas dbt (staging → intermediate → core → marts) + un esquema `reference` con datos de referencia curados a mano, en esquema estrella "limpio" (las tablas de hechos solo tienen FKs + métricas, sin columnas descriptivas duplicadas de las dimensiones)
 - **Consulta**: API de solo lectura (`/consulta/*`) sobre `core`/`marts`, consumida por el UI unificado y disponible para cualquier otro cliente
-- **Gobernanza de indicadores**: pestaña "Indicadores" en el UI para activar/desactivar cada indicador por nivel geográfico y por uso en Machine Learning, apoyada en una vista de cobertura real de datos (`reporting.v_indicadores_cobertura`) — sin pasar por CSV ni redeploy
-- **Machine Learning**: pipeline de Prefect (`flows/05_ml_train.py`) que entrena y valida modelos de predicción de precio de vivienda, con gate champion/challenger y predicciones servidas vía `GET /predicciones` — ver [Pipeline de Machine Learning](#pipeline-de-machine-learning)
+- **Gobernanza de indicadores**: pestaña "Indicadores" en el UI para activar/desactivar cada indicador por nivel geográfico y por uso en Machine Learning, apoyada en una vista de cobertura real de datos (`reporting.v_indicadores_cobertura`), sin pasar por CSV ni redeploy
+- **Machine Learning**: pipeline de Prefect (`flows/05_ml_train.py`) que entrena y valida modelos de predicción de precio de vivienda, con gate champion/challenger y predicciones servidas vía `GET /predicciones` (ver [Pipeline de Machine Learning](#pipeline-de-machine-learning))
 - **Visualización**: UI web propio (`/ui/`, 4 vistas: carga, consulta de datos, dashboard embebido, gobernanza de indicadores) + conexión directa desde Power BI Desktop a la capa marts + landing pública en GitHub Pages (`docs/index.html`, solo el dashboard)
 
 Hay **dos caminos de carga**, y es importante no confundirlos (ver [Dos caminos de carga](#dos-caminos-de-carga)):
@@ -237,7 +237,7 @@ flows/05_ml_train.py (Prefect, disparo manual, independiente del pipeline de car
 │   ├── fuentes_registradas_y_api.md         # Diseño del catálogo de fuentes + versionado
 │   ├── esquema_estrella_final_powerbi.md    # Modelo semántico objetivo para Power BI
 │   ├── consideraciones_prefect_flows.md     # Requisitos de los 3 flows productivos
-│   ├── instrucciones_ml_claude_code.md      # Especificación original del pipeline de ML
+│   ├── especificacion_ml.md                 # Especificación original del pipeline de ML
 │   └── pipeline_machine_learning.md         # Qué se implementó y por qué (ver Pipeline de ML)
 └── src/
     ├── api/
@@ -403,8 +403,8 @@ vista sin recargar la página (`nav.js`):
    `dbt run` acotado para propagar los toggles a `fact_indicadores_anuales`.
 
 `docs/index.html` (GitHub Pages) es una página **separada y deliberadamente
-más simple**: solo el dashboard de Power BI, sin las otras vistas —
-GitHub Pages es hosting estático puro y no puede ejecutar `dataset-api`, así
+más simple**: solo el dashboard de Power BI, sin las otras vistas. GitHub
+Pages es hosting estático puro y no puede ejecutar `dataset-api`, de modo
 que el resto de vistas no tendrían backend con el que hablar ahí. Ambas
 páginas comparten la misma identidad visual (paleta azul institucional
 `#1D3557`, Georgia para títulos, Segoe UI para el resto).
@@ -423,7 +423,7 @@ con backtesting 2011-2026T2 y forecast recursivo 2026T3-2027T4. Documentación
 completa (arquitectura, decisiones de diseño y por qué) en
 [`consideraciones/pipeline_machine_learning.md`](consideraciones/pipeline_machine_learning.md);
 especificación original en
-[`consideraciones/instrucciones_ml_claude_code.md`](consideraciones/instrucciones_ml_claude_code.md).
+[`consideraciones/especificacion_ml.md`](consideraciones/especificacion_ml.md).
 
 **Disparo manual** (igual que el resto de flows del proyecto — no hay
 scheduling automático todavía):
@@ -446,38 +446,39 @@ esencialmente lo mismo que un indicador ya incluido (detalle completo en
 **Flujo**: pivotea `fact_indicadores_anuales` (EAV) a ancho, hace forward-fill
 anual→trimestral (con extrapolación de tendencia para los indicadores que
 la tienen, en vez de solo repetir el último dato real) y calcula lags de
-`precio_m2`/`num_transacciones` → entrena un baseline naive, `Ridge` (grid
-de 13 valores de `alpha`, 0.001 a 300), `XGBoost` (random search de 25
-combinaciones) y `SARIMAX` univariado (AR(1), sin exógenas, como referencia
-comparativa adicional) con **walk-forward validation** (ventana expansiva
-sobre 2019-2024, nunca k-fold aleatorio) → un modelo (Ridge o XGBoost) solo
-se activa como **champion** si `R² >= 0.75 AND accuracy_direccional >= 0.75`
-simultáneamente, sobre esa misma ventana de desarrollo — si ninguno cumple,
+`precio_m2`/`num_transacciones`. Con esas features se entrena un baseline
+naive, `Ridge` (grid de 13 valores de `alpha`, 0.001 a 300), `XGBoost`
+(random search de 25 combinaciones) y `SARIMAX` univariado (AR(1), sin
+exógenas, como referencia comparativa adicional), todos evaluados con
+**walk-forward validation** (ventana expansiva sobre 2019-2024, nunca
+k-fold aleatorio). Un modelo (Ridge o XGBoost) solo se activa como
+**champion** si `R² >= 0.75 AND accuracy_direccional >= 0.75`
+simultáneamente sobre esa misma ventana de desarrollo; si ninguno cumple,
 se loggea el margen de cada métrica y el champion anterior sigue sirviendo
-predicciones sin interrupción → el modelo aprobado se serializa (`Pipeline`
+predicciones sin interrupción. El modelo aprobado se serializa (`Pipeline`
 completo) y sube a MinIO junto a un gráfico de explicabilidad (SHAP para
-XGBoost, coeficientes estandarizados para Ridge) — los mismos valores de
+XGBoost, coeficientes estandarizados para Ridge); los mismos valores de
 importancia quedan además guardados como dato estructurado en
 `ml_model_registry.importancia_features`/`core.dim_modelo`, junto a
-`indicadores_usados` (qué indicadores entrenaron esa versión); los 3
+`indicadores_usados` (qué indicadores entrenaron esa versión). Los 3
 modelos que no ganaron el gate (naive, XGBoost, SARIMAX) también se
-persisten con `es_champion=false`, solo con fines comparativos → forecast
-recursivo para los 6 trimestres sin dato real, con bandas de incertidumbre
-que se ensanchan con el horizonte.
+persisten con `es_champion=false`, solo con fines comparativos. Por último
+se ejecuta el forecast recursivo para los 6 trimestres sin dato real, con
+bandas de incertidumbre que se ensanchan con el horizonte.
 
 **Holdout final, separado de todo el proceso de selección** (2025T1-2026T2,
 6 trimestres, nunca visto durante la elección de variables/hiperparámetros/
 modelo): el champion actual (`Ridge`, `alpha=0.0025`) obtiene **R²=0,7964 /
-accuracy direccional=91,67%** en desarrollo (walk-forward 2019-2024) —
-estas son las métricas usadas para el gate, no el desempeño real esperado.
+accuracy direccional=91,67%** en desarrollo (walk-forward 2019-2024). Estas
+son las métricas usadas para el gate, no el desempeño real esperado.
 Evaluado una sola vez contra el holdout: **R²=-0,0624 / accuracy
-direccional=100% / MAE=0,0068** — la caída del R² confirma que las cifras
+direccional=100% / MAE=0,0068**. La caída del R² confirma que las cifras
 de desarrollo estaban optimistamente sesgadas por selección iterativa sobre
 la misma ventana de validación (metodología completa, tabla comparativa de
 los 4 modelos y la discusión de por qué esto no invalida el modelo, en
-`pipeline_machine_learning.md`, sección "Holdout final"). Dato relevante:
+`pipeline_machine_learning.md`, sección "Holdout final"). Un dato relevante:
 en este holdout concreto, Ridge **no supera claramente** al baseline naive
-(RMSE 0,00764 vs 0,00734 del naive) — la accuracy=100% de ambos es
+(RMSE 0,00764 vs 0,00734 del naive). La accuracy=100% de ambos es
 esperable en un tramo de subida ininterrumpida del precio y no debe leerse
 como evidencia de calidad por sí sola.
 

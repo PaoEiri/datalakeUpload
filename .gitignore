@@ -34,3 +34,10 @@ mlartifacts/
 # OS
 .DS_Store
 .guion.md
+
+# dbt build artifacts (generados por `dbt run`/`dbt docs generate`,
+# no son fuente — se regeneran siempre localmente)
+dbt/target/
+dbt/logs/
+/manifest.json
+/catalog.json

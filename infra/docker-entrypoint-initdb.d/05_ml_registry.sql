@@ -1,5 +1,5 @@
 -- Pipeline de ML: predicción de variación trimestral de precio_m2 (municipal).
--- Ver consideraciones/instrucciones_ml_claude_code.md para el diseño completo.
+-- Ver consideraciones/especificacion_ml.md para el diseño completo.
 
 ALTER TABLE reference.seed_indicadores_fuentes
     ADD COLUMN IF NOT EXISTS usar_en_ml BOOLEAN NOT NULL DEFAULT FALSE;
