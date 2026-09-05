@@ -17,6 +17,10 @@
     rmse numeric(18,6),
     mae numeric(18,6),
     accuracy_direccional numeric(10,6),
+    r2_holdout numeric(10,6),
+    rmse_holdout numeric(18,6),
+    mae_holdout numeric(18,6),
+    accuracy_direccional_holdout numeric(10,6),
     indicadores_usados json,
     importancia_features json,
     
@@ -24,12 +28,12 @@
     )
  ;
     insert into "postgres"."core"."dim_modelo__dbt_tmp" (
-      id_modelo, nombre_modelo, version, fecha_entrenamiento, es_champion, r2, rmse, mae, accuracy_direccional, indicadores_usados, importancia_features
+      id_modelo, nombre_modelo, version, fecha_entrenamiento, es_champion, r2, rmse, mae, accuracy_direccional, r2_holdout, rmse_holdout, mae_holdout, accuracy_direccional_holdout, indicadores_usados, importancia_features
     )
   
   (
     
-    select id_modelo, nombre_modelo, version, fecha_entrenamiento, es_champion, r2, rmse, mae, accuracy_direccional, indicadores_usados, importancia_features
+    select id_modelo, nombre_modelo, version, fecha_entrenamiento, es_champion, r2, rmse, mae, accuracy_direccional, r2_holdout, rmse_holdout, mae_holdout, accuracy_direccional_holdout, indicadores_usados, importancia_features
     from (
         
 
@@ -48,6 +52,13 @@ SELECT
     rmse,
     mae,
     accuracy_direccional,
+    -- Holdout final (2025T1-2026T2), nunca visto durante desarrollo — el
+    -- desempeño real esperado del modelo (ver consideraciones/pipeline_machine_learning.md).
+    -- r2/rmse/mae/accuracy_direccional de arriba son de desarrollo (walk-forward).
+    r2_holdout,
+    rmse_holdout,
+    mae_holdout,
+    accuracy_direccional_holdout,
     indicadores_usados,
     importancia_features
 FROM "postgres"."public"."ml_model_registry"

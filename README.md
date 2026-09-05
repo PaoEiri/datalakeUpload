@@ -433,8 +433,8 @@ docker exec -it prefect-worker python flows/05_ml_train.py
 ```
 
 **Qué indicadores usa el modelo** es configurable desde la pestaña
-**Indicadores** del UI (checkbox "Usar en ML"), no está hardcodeado. De los 31
-indicadores disponibles a nivel municipal se probó la correlación (Pearson)
+**Indicadores** del UI (checkbox "Usar en ML"), no está hardcodeado. De los 24
+indicadores candidatos a nivel municipal se probó la correlación (Pearson)
 de cada uno contra la variación de `precio_m2` y se seleccionaron los **7**
 con señal real y sin redundancia entre sí: tasa de desempleo, ocupados
 20-64 años, renta neta media de los hogares, población ≥65 años, mediana
@@ -447,28 +447,39 @@ esencialmente lo mismo que un indicador ya incluido (detalle completo en
 anual→trimestral (con extrapolación de tendencia para los indicadores que
 la tienen, en vez de solo repetir el último dato real) y calcula lags de
 `precio_m2`/`num_transacciones` → entrena un baseline naive, `Ridge` (grid
-de 13 valores de `alpha`, 0.001 a 300) y `XGBoost` (random search de 25
-combinaciones) con **walk-forward validation** (ventana expansiva sobre
-2019-2026, 30 trimestres — ampliada dos veces: primero desde una ventana
-inicial de solo 8 trimestres que resultó demasiado inestable, y luego
-hasta 2026 para no dejar fuera de la medición los trimestres más recientes
-con dato real de precio, nunca k-fold aleatorio) → un modelo solo se
-activa como **champion** si `R² >= 0.75 AND accuracy_direccional >= 0.75`
-simultáneamente — si ninguno cumple, se loggea el margen de cada métrica y
-el champion anterior sigue sirviendo predicciones sin interrupción → el
-modelo aprobado se serializa (`Pipeline` completo) y sube a MinIO junto a
-un gráfico de explicabilidad (SHAP para XGBoost, coeficientes
-estandarizados para Ridge) — los mismos valores de importancia quedan
-además guardados como dato estructurado en
+de 13 valores de `alpha`, 0.001 a 300), `XGBoost` (random search de 25
+combinaciones) y `SARIMAX` univariado (AR(1), sin exógenas, como referencia
+comparativa adicional) con **walk-forward validation** (ventana expansiva
+sobre 2019-2024, nunca k-fold aleatorio) → un modelo (Ridge o XGBoost) solo
+se activa como **champion** si `R² >= 0.75 AND accuracy_direccional >= 0.75`
+simultáneamente, sobre esa misma ventana de desarrollo — si ninguno cumple,
+se loggea el margen de cada métrica y el champion anterior sigue sirviendo
+predicciones sin interrupción → el modelo aprobado se serializa (`Pipeline`
+completo) y sube a MinIO junto a un gráfico de explicabilidad (SHAP para
+XGBoost, coeficientes estandarizados para Ridge) — los mismos valores de
+importancia quedan además guardados como dato estructurado en
 `ml_model_registry.importancia_features`/`core.dim_modelo`, junto a
-`indicadores_usados` (qué indicadores entrenaron esa versión) → forecast
+`indicadores_usados` (qué indicadores entrenaron esa versión); los 3
+modelos que no ganaron el gate (naive, XGBoost, SARIMAX) también se
+persisten con `es_champion=false`, solo con fines comparativos → forecast
 recursivo para los 6 trimestres sin dato real, con bandas de incertidumbre
 que se ensanchan con el horizonte.
 
-Con los 7 indicadores finales, el modelo `Ridge` (`alpha=0.0025`) superó el
-gate: **R²=0.81, accuracy direccional=0.93** — `XGBoost` no lo superó
-(R²≈0.27-0.30; muestra pequeña, ~52 filas de entrenamiento, favorece un
-modelo lineal muy regularizado sobre árboles).
+**Holdout final, separado de todo el proceso de selección** (2025T1-2026T2,
+6 trimestres, nunca visto durante la elección de variables/hiperparámetros/
+modelo): el champion actual (`Ridge`, `alpha=0.0025`) obtiene **R²=0,7964 /
+accuracy direccional=91,67%** en desarrollo (walk-forward 2019-2024) —
+estas son las métricas usadas para el gate, no el desempeño real esperado.
+Evaluado una sola vez contra el holdout: **R²=-0,0624 / accuracy
+direccional=100% / MAE=0,0068** — la caída del R² confirma que las cifras
+de desarrollo estaban optimistamente sesgadas por selección iterativa sobre
+la misma ventana de validación (metodología completa, tabla comparativa de
+los 4 modelos y la discusión de por qué esto no invalida el modelo, en
+`pipeline_machine_learning.md`, sección "Holdout final"). Dato relevante:
+en este holdout concreto, Ridge **no supera claramente** al baseline naive
+(RMSE 0,00764 vs 0,00734 del naive) — la accuracy=100% de ambos es
+esperable en un tramo de subida ininterrumpida del precio y no debe leerse
+como evidencia de calidad por sí sola.
 
 **Serving**: `GET /predicciones` (solo lectura) y conexión directa desde
 Power BI a `marts.fact_predicciones` — misma conexión Postgres que el resto
@@ -650,11 +661,11 @@ dim_geografia            15 filas   (Málaga municipio = id_geografia 15)
 dim_tiempo              129 filas   (trimestres + años reales, más 12 trimestres futuros sintéticos)
 dim_indicador            78 filas
 dim_tipo_vivienda         4 filas
-dim_modelo               11 filas   (modelos de ML entrenados, ver Pipeline de Machine Learning)
+dim_modelo               16 filas   (modelos de ML entrenados —naive/ridge/xgboost/sarimax—, ver Pipeline de Machine Learning)
 fact_precio_vivienda   1.530 filas   (id_tiempo, id_geografia, precio_m2)
 fact_transacciones_inmobiliarias  356 filas   (id_tiempo, id_geografia, id_tipo_vivienda, num_transacciones)
 fact_indicadores_anuales        2.032 filas   (id_tiempo, id_geografia, id_indicador, valor)
-fact_predicciones                640 filas   (id_tiempo, id_geografia, id_modelo, precio_predicho)
+fact_predicciones                776 filas   (id_tiempo, id_geografia, id_modelo, precio_predicho)
 
 Done. PASS=84 WARN=1 ERROR=0 SKIP=0 NO-OP=0 TOTAL=85
 ```

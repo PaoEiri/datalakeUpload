@@ -180,6 +180,10 @@ def create_model_registry_entry(
     ruta_minio_shap: Optional[str] = None,
     indicadores_usados: Optional[list] = None,
     importancia_features: Optional[list] = None,
+    r2_holdout: Optional[float] = None,
+    accuracy_direccional_holdout: Optional[float] = None,
+    rmse_holdout: Optional[float] = None,
+    mae_holdout: Optional[float] = None,
 ) -> MLModelRegistry:
     modelo = MLModelRegistry(
         version=version,
@@ -191,6 +195,10 @@ def create_model_registry_entry(
         accuracy_direccional=accuracy_direccional,
         rmse=rmse,
         mae=mae,
+        r2_holdout=r2_holdout,
+        accuracy_direccional_holdout=accuracy_direccional_holdout,
+        rmse_holdout=rmse_holdout,
+        mae_holdout=mae_holdout,
         ruta_minio_modelo=ruta_minio_modelo,
         ruta_minio_shap=ruta_minio_shap,
     )

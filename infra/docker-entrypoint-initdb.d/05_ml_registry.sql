@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS public.ml_model_registry (
     id_modelo              SERIAL PRIMARY KEY,
     version                VARCHAR(50) NOT NULL UNIQUE,
     algoritmo               VARCHAR(20) NOT NULL
-        CHECK (algoritmo IN ('naive', 'ridge', 'xgboost')),
+        CHECK (algoritmo IN ('naive', 'ridge', 'xgboost', 'sarimax')),
     fecha_entrenamiento     TIMESTAMP NOT NULL DEFAULT now(),
     hiperparametros         JSON,
     indicadores_usados      JSON,
@@ -43,6 +43,12 @@ CREATE TABLE IF NOT EXISTS public.ml_model_registry (
     accuracy_direccional    NUMERIC(10, 6),
     rmse                    NUMERIC(18, 6),
     mae                     NUMERIC(18, 6),
+    -- Holdout final (2025T1-2026T2), nunca visto durante desarrollo — ver
+    -- src/tasks/ml.py::_evaluar_holdout. Desempeño real esperado.
+    r2_holdout                      NUMERIC(10, 6),
+    accuracy_direccional_holdout    NUMERIC(10, 6),
+    rmse_holdout                    NUMERIC(18, 6),
+    mae_holdout                     NUMERIC(18, 6),
     es_champion             BOOLEAN NOT NULL DEFAULT FALSE,
     ruta_minio_modelo       VARCHAR(300),
     ruta_minio_shap         VARCHAR(300)

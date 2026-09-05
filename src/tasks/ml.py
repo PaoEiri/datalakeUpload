@@ -60,12 +60,26 @@ TRAIN_ANIOS = (2010, 2022)
 # modelos (verificado en sesión: el mismo modelo pasaba de R²=0.69 a -1.04
 # solo por variar 2 features, con folds idénticos en todo lo demás).
 # 2019-2024 (24 trimestres) incluye el shock de la COVID y da una medición
-# mucho más robusta. Ampliado a 2019-2026 en una sesión posterior: excluir
-# 2025-2026 ocultaba un sesgo sistemático de subestimación en esos
-# trimestres (indicadores sin dato real todavía, ver
-# _extender_indicadores_anuales) que sí afecta la calidad real del modelo
-# y debía reflejarse en el gate, no quedar fuera de la medición.
-VAL_ANIOS = (2019, 2026)
+# mucho más robusta.
+#
+# Se probó ampliar a (2019, 2026) para no dejar fuera el sesgo de
+# subestimación que se detectó en 2025-2026 (ver _extender_indicadores_anuales)
+# — pero eso reintrodujo un problema distinto y más grave: la misma ventana
+# que decide variables/hiperparámetros/modelo campeón terminaba siendo
+# también la que se reportaba como métrica final, sobreajustando el número
+# reportado a fuerza de iterar sobre ella. Se revirtió a (2019, 2024) y esos
+# 6 trimestres (2025T1-2026T2) se separaron como HOLDOUT_DESDE_ANIO: un
+# conjunto de prueba genuino, nunca visto durante el desarrollo, evaluado
+# una sola vez al final (ver _evaluar_holdout más abajo).
+VAL_ANIOS = (2019, 2024)
+
+# Primer año del holdout final — separado por completo de todo el proceso
+# de desarrollo (selección de variables, búsqueda de hiperparámetros,
+# comparación walk-forward entre modelos). Son los mismos 6 trimestres
+# (2025T1-2026T2) donde se detectó el sesgo de subestimación de la sección
+# de arriba — ya sabíamos que eran los trimestres más informativos para
+# medir generalización real, así que se usan también como el holdout.
+HOLDOUT_DESDE_ANIO = 2025
 
 # Indicadores con tendencia clara y consistente (verificado en sesión sobre
 # su histórico completo: suben o bajan año a año sin reversiones relevantes
@@ -322,12 +336,133 @@ def _walk_forward(df: pd.DataFrame, feature_cols: list[str], build_pipeline) -> 
     }
 
 
+def _evaluar_holdout(df: pd.DataFrame, feature_cols: list[str], build_pipeline) -> dict:
+    """Evaluación final de holdout: entrena UNA sola vez con datos
+    estrictamente anteriores a HOLDOUT_DESDE_ANIO (nunca vistos durante la
+    selección de hiperparámetros/modelo, que corre sobre VAL_ANIOS) y
+    predice, también una sola vez, los trimestres de holdout — sin
+    walk-forward/reentrenos dentro del propio holdout. build_pipeline()
+    debe devolver un sklearn Pipeline sin entrenar, ya con los
+    hiperparámetros elegidos en el desarrollo."""
+    df = df.dropna(subset=feature_cols + ["target"]).reset_index(drop=True)
+    dev_mask = (df["anio"] >= TRAIN_ANIOS[0]) & (df["anio"] < HOLDOUT_DESDE_ANIO)
+    holdout_mask = df["anio"] >= HOLDOUT_DESDE_ANIO
+
+    df_dev, df_holdout = df.loc[dev_mask], df.loc[holdout_mask]
+    if len(df_holdout) == 0:
+        return {"r2": None, "rmse": None, "mae": None, "accuracy_direccional": None, "n": 0}
+
+    pipeline = build_pipeline()
+    pipeline.fit(df_dev[feature_cols], df_dev["target"])
+    y_true = df_holdout["target"].values
+    y_pred = pipeline.predict(df_holdout[feature_cols])
+
+    return {
+        "r2": float(r2_score(y_true, y_pred)) if len(y_true) > 1 else None,
+        "rmse": float(np.sqrt(mean_squared_error(y_true, y_pred))),
+        "mae": float(mean_absolute_error(y_true, y_pred)),
+        "accuracy_direccional": _directional_accuracy(y_true, y_pred),
+        "n": len(y_true),
+    }
+
+
+def _naive_walk_forward(df: pd.DataFrame, anio_desde: int, anio_hasta: int) -> dict:
+    """Baseline naive (media móvil de las últimas 4 variaciones conocidas)
+    evaluado con el mismo esquema walk-forward que Ridge/XGBoost, restringido
+    a [anio_desde, anio_hasta] — se reutiliza tanto para desarrollo
+    (VAL_ANIOS) como para holdout (HOLDOUT_DESDE_ANIO en adelante). El naive
+    no se "entrena" ni se selecciona con datos futuros — solo mira hacia
+    atrás en cada punto — así que no hay riesgo de fuga de holdout al
+    calcularlo con el mismo esquema de ventana expansiva."""
+    df = df.dropna(subset=["target"]).reset_index(drop=True)
+    mask = (df["anio"] >= anio_desde) & (df["anio"] <= anio_hasta)
+    y_true, y_pred = [], []
+    for idx in df.index[mask]:
+        hist = df.loc[df.index < idx]
+        if len(hist) < 4:
+            continue
+        y_true.append(df.loc[idx, "target"])
+        y_pred.append(_naive_predict(hist))
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    if len(y_true) == 0:
+        return {"r2": None, "rmse": None, "mae": None, "accuracy_direccional": None, "n": 0}
+    return {
+        "r2": float(r2_score(y_true, y_pred)) if len(y_true) > 1 else None,
+        "rmse": float(np.sqrt(mean_squared_error(y_true, y_pred))),
+        "mae": float(mean_absolute_error(y_true, y_pred)),
+        "accuracy_direccional": _directional_accuracy(y_true, y_pred),
+        "n": len(y_true),
+    }
+
+
+def _sarimax_dev_holdout(df: pd.DataFrame) -> tuple[dict, dict]:
+    """SARIMAX univariado sin exógenas, AR(1) sobre `target` (la
+    especificación que mejor resultó de las 17 probadas ad hoc — ver
+    consideraciones/pipeline_machine_learning.md, sección 'Por qué no se usa
+    SARIMAX'). Evaluado con el mismo protocolo que Ridge/XGBoost: desarrollo
+    = walk-forward (refit en cada paso) sobre VAL_ANIOS; holdout = un solo
+    fit con datos <HOLDOUT_DESDE_ANIO y un solo forecast de los 6 pasos de
+    holdout (sin refit intermedio, igual que _evaluar_holdout)."""
+    from statsmodels.tsa.statespace.sarimax import SARIMAX
+    import warnings
+
+    df = df.dropna(subset=["target"]).reset_index(drop=True)
+    ORDER = (1, 0, 0)
+
+    train_mask_base = df["anio"] >= TRAIN_ANIOS[0]
+    val_mask = (df["anio"] >= VAL_ANIOS[0]) & (df["anio"] <= VAL_ANIOS[1])
+    y_true, y_pred = [], []
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for idx in df.index[val_mask]:
+            hist = df.loc[(df.index < idx) & train_mask_base, "target"]
+            if len(hist) < 8:
+                continue
+            ajuste = SARIMAX(
+                hist, order=ORDER, trend="n",
+                enforce_stationarity=False, enforce_invertibility=False,
+            ).fit(disp=False)
+            y_true.append(df.loc[idx, "target"])
+            y_pred.append(float(ajuste.forecast(steps=1).iloc[0]))
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    dev = {
+        "r2": float(r2_score(y_true, y_pred)) if len(y_true) > 1 else None,
+        "rmse": float(np.sqrt(mean_squared_error(y_true, y_pred))) if len(y_true) else None,
+        "mae": float(mean_absolute_error(y_true, y_pred)) if len(y_true) else None,
+        "accuracy_direccional": _directional_accuracy(y_true, y_pred),
+        "n": len(y_true),
+    }
+
+    dev_mask = (df["anio"] >= TRAIN_ANIOS[0]) & (df["anio"] < HOLDOUT_DESDE_ANIO)
+    df_holdout = df.loc[df["anio"] >= HOLDOUT_DESDE_ANIO]
+    if len(df_holdout) == 0:
+        holdout = {"r2": None, "rmse": None, "mae": None, "accuracy_direccional": None, "n": 0}
+    else:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ajuste = SARIMAX(
+                df.loc[dev_mask, "target"], order=ORDER, trend="n",
+                enforce_stationarity=False, enforce_invertibility=False,
+            ).fit(disp=False)
+            y_pred_h = ajuste.forecast(steps=len(df_holdout)).values
+        y_true_h = df_holdout["target"].values
+        holdout = {
+            "r2": float(r2_score(y_true_h, y_pred_h)) if len(y_true_h) > 1 else None,
+            "rmse": float(np.sqrt(mean_squared_error(y_true_h, y_pred_h))),
+            "mae": float(mean_absolute_error(y_true_h, y_pred_h)),
+            "accuracy_direccional": _directional_accuracy(y_true_h, y_pred_h),
+            "n": len(y_true_h),
+        }
+    return dev, holdout
+
+
 @dataclass
 class ModeloEntrenado:
     algoritmo: str
     pipeline: object
     hiperparametros: dict
     metricas: dict = field(default_factory=dict)
+    metricas_holdout: dict = field(default_factory=dict)
 
 
 RIDGE_ALPHAS = [0.001, 0.0025, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300]
@@ -371,8 +506,27 @@ def train_models(df: pd.DataFrame) -> dict[str, ModeloEntrenado]:
 
     resultados: dict[str, ModeloEntrenado] = {}
 
-    # --- Naive (sin fit real, solo referencia) ---
-    resultados["naive"] = ModeloEntrenado(algoritmo="naive", pipeline=None, hiperparametros={})
+    # --- Naive (sin fit real, solo referencia): dev + holdout, mismo
+    # esquema walk-forward de _naive_walk_forward reutilizado en ambas ventanas ---
+    metricas_naive = _naive_walk_forward(df, VAL_ANIOS[0], VAL_ANIOS[1])
+    metricas_naive_holdout = _naive_walk_forward(df, HOLDOUT_DESDE_ANIO, 2100)
+    logger.info(f"Naive holdout (2025T1-2026T2, n={metricas_naive_holdout['n']}): "
+                f"r2={metricas_naive_holdout['r2']} acc_dir={metricas_naive_holdout['accuracy_direccional']}")
+    resultados["naive"] = ModeloEntrenado(
+        algoritmo="naive", pipeline=None, hiperparametros={},
+        metricas=metricas_naive, metricas_holdout=metricas_naive_holdout,
+    )
+
+    # --- SARIMAX (AR(1) univariado, sin exógenas) — no compite por el gate,
+    # se evalúa como referencia comparativa adicional en ambas ventanas ---
+    metricas_sarimax, metricas_sarimax_holdout = _sarimax_dev_holdout(df)
+    logger.info(f"SARIMAX desarrollo: r2={metricas_sarimax['r2']} acc_dir={metricas_sarimax['accuracy_direccional']}")
+    logger.info(f"SARIMAX holdout (2025T1-2026T2, n={metricas_sarimax_holdout['n']}): "
+                f"r2={metricas_sarimax_holdout['r2']} acc_dir={metricas_sarimax_holdout['accuracy_direccional']}")
+    resultados["sarimax"] = ModeloEntrenado(
+        algoritmo="sarimax", pipeline=None, hiperparametros={"order": [1, 0, 0], "trend": "n"},
+        metricas=metricas_sarimax, metricas_holdout=metricas_sarimax_holdout,
+    )
 
     # --- Ridge: grid exhaustivo de alpha (barato, 1 solo hiperparámetro) ---
     evaluados_ridge = []
@@ -390,10 +544,18 @@ def train_models(df: pd.DataFrame) -> dict[str, ModeloEntrenado]:
     pipeline = Pipeline([("scaler", StandardScaler()), ("model", Ridge(alpha=mejores_params["alpha"], random_state=42))])
     pipeline.fit(df.dropna(subset=feature_cols + ["target"])[feature_cols],
                  df.dropna(subset=feature_cols + ["target"])["target"])
+    build_ridge_final = lambda a=mejores_params["alpha"]: Pipeline([
+        ("scaler", StandardScaler()),
+        ("model", Ridge(alpha=a, random_state=42)),
+    ])
+    metricas_holdout = _evaluar_holdout(df, feature_cols, build_ridge_final)
+    logger.info(f"Ridge holdout (2025T1-2026T2, n={metricas_holdout['n']}): "
+                f"r2={metricas_holdout['r2']} acc_dir={metricas_holdout['accuracy_direccional']}")
     resultados["ridge"] = ModeloEntrenado(
         algoritmo="ridge", pipeline=pipeline,
         hiperparametros={**mejores_params, "n_combinaciones_evaluadas": len(evaluados_ridge)},
         metricas=metricas,
+        metricas_holdout=metricas_holdout,
     )
 
     # --- XGBoost: random search acotado (grid completo sería combinatoriamente
@@ -419,10 +581,15 @@ def train_models(df: pd.DataFrame) -> dict[str, ModeloEntrenado]:
     pipeline = Pipeline([("model", XGBRegressor(**mejores_params))])
     pipeline.fit(df.dropna(subset=feature_cols + ["target"])[feature_cols],
                  df.dropna(subset=feature_cols + ["target"])["target"])
+    build_xgb_final = lambda p=mejores_params: Pipeline([("model", XGBRegressor(**p))])
+    metricas_holdout = _evaluar_holdout(df, feature_cols, build_xgb_final)
+    logger.info(f"XGBoost holdout (2025T1-2026T2, n={metricas_holdout['n']}): "
+                f"r2={metricas_holdout['r2']} acc_dir={metricas_holdout['accuracy_direccional']}")
     resultados["xgboost"] = ModeloEntrenado(
         algoritmo="xgboost", pipeline=pipeline,
         hiperparametros={**mejores_params, "n_combinaciones_evaluadas": len(evaluados_xgb)},
         metricas=metricas,
+        metricas_holdout=metricas_holdout,
     )
 
     return resultados
@@ -434,28 +601,9 @@ def train_models(df: pd.DataFrame) -> dict[str, ModeloEntrenado]:
 @task(name="ml-validate-walkforward", retries=0)
 def validate_walkforward(modelos: dict[str, ModeloEntrenado], df: pd.DataFrame) -> dict[str, dict]:
     logger = _get_logger()
-    feature_cols = _feature_cols(df)
     resultado = {}
 
-    # Naive: walk-forward con la media móvil de 4 trimestres.
-    df_val = df.dropna(subset=feature_cols + ["target"]).reset_index(drop=True)
-    val_mask = (df_val["anio"] >= VAL_ANIOS[0]) & (df_val["anio"] <= VAL_ANIOS[1])
-    y_true_n, y_pred_n = [], []
-    for idx in df_val.index[val_mask]:
-        hist = df_val.loc[df_val.index < idx]
-        if len(hist) < 4:
-            continue
-        y_true_n.append(df_val.loc[idx, "target"])
-        y_pred_n.append(_naive_predict(hist))
-    y_true_n, y_pred_n = np.array(y_true_n), np.array(y_pred_n)
-    resultado["naive"] = {
-        "r2": float(r2_score(y_true_n, y_pred_n)) if len(y_true_n) > 1 else None,
-        "rmse": float(np.sqrt(mean_squared_error(y_true_n, y_pred_n))) if len(y_true_n) else None,
-        "mae": float(mean_absolute_error(y_true_n, y_pred_n)) if len(y_true_n) else None,
-        "accuracy_direccional": _directional_accuracy(y_true_n, y_pred_n),
-    }
-
-    for nombre in ("ridge", "xgboost"):
+    for nombre in ("naive", "ridge", "xgboost", "sarimax"):
         m = modelos[nombre].metricas
         resultado[nombre] = {k: m.get(k) for k in ("r2", "rmse", "mae", "accuracy_direccional")}
         logger.info(f"{nombre}: r2={resultado[nombre]['r2']} acc_dir={resultado[nombre]['accuracy_direccional']}")
@@ -579,6 +727,17 @@ def persist_model(modelo: ModeloEntrenado, metricas: dict, df: pd.DataFrame) -> 
 
     ruta_shap = _generar_shap_plot(modelo, version, minio)
 
+    h = modelo.metricas_holdout
+    logger.info(
+        f"Métricas desarrollo (walk-forward, {VAL_ANIOS}): r2={metricas.get('r2')} "
+        f"acc_dir={metricas.get('accuracy_direccional')} mae={metricas.get('mae')}"
+    )
+    logger.info(
+        f"Métricas HOLDOUT FINAL (2025T1-2026T2, nunca visto en desarrollo): "
+        f"r2={h.get('r2')} acc_dir={h.get('accuracy_direccional')} mae={h.get('mae')} "
+        f"— citar estas como el desempeño real esperado."
+    )
+
     with SessionLocal() as db:
         registro = crud_sync.create_model_registry_entry(
             db,
@@ -589,6 +748,10 @@ def persist_model(modelo: ModeloEntrenado, metricas: dict, df: pd.DataFrame) -> 
             accuracy_direccional=metricas.get("accuracy_direccional"),
             rmse=metricas.get("rmse"),
             mae=metricas.get("mae"),
+            r2_holdout=h.get("r2"),
+            accuracy_direccional_holdout=h.get("accuracy_direccional"),
+            rmse_holdout=h.get("rmse"),
+            mae_holdout=h.get("mae"),
             ruta_minio_modelo=ruta_modelo,
             ruta_minio_shap=ruta_shap,
             indicadores_usados=indicadores_usados,
@@ -598,6 +761,47 @@ def persist_model(modelo: ModeloEntrenado, metricas: dict, df: pd.DataFrame) -> 
         id_modelo = registro.id_modelo
 
     logger.info(f"Modelo persistido: version={version} id_modelo={id_modelo} ruta={ruta_modelo}")
+    return id_modelo
+
+
+@task(name="ml-persist-challenger", retries=0)
+def persist_challenger(modelo: ModeloEntrenado, df: pd.DataFrame) -> int:
+    """Persiste un modelo NO campeón (naive, o el algoritmo que perdió el
+    gate) solo con fines comparativos: guarda métricas dev+holdout en
+    ml_model_registry (es_champion=false), sin subir .pkl a MinIO ni generar
+    el gráfico SHAP — esos artefactos son innecesarios para un modelo que no
+    sirve predicciones. Da trazabilidad completa al Anexo D (comparación de
+    los 4 candidatos bajo el mismo protocolo dev/holdout)."""
+    logger = _get_logger()
+    version = pd.Timestamp.utcnow().strftime("%Y%m%d_%H%M%S") + f"_{modelo.algoritmo}"
+    indicadores_usados = _indicadores_usados(_feature_cols(df)) if modelo.algoritmo not in ("naive", "sarimax") else []
+
+    h = modelo.metricas_holdout
+    logger.info(
+        f"[{modelo.algoritmo}] desarrollo: r2={modelo.metricas.get('r2')} "
+        f"acc_dir={modelo.metricas.get('accuracy_direccional')} — "
+        f"holdout: r2={h.get('r2')} acc_dir={h.get('accuracy_direccional')}"
+    )
+
+    with SessionLocal() as db:
+        registro = crud_sync.create_model_registry_entry(
+            db,
+            version=version,
+            algoritmo=modelo.algoritmo,
+            hiperparametros=modelo.hiperparametros,
+            r2=modelo.metricas.get("r2"),
+            accuracy_direccional=modelo.metricas.get("accuracy_direccional"),
+            rmse=modelo.metricas.get("rmse"),
+            mae=modelo.metricas.get("mae"),
+            r2_holdout=h.get("r2"),
+            accuracy_direccional_holdout=h.get("accuracy_direccional"),
+            rmse_holdout=h.get("rmse"),
+            mae_holdout=h.get("mae"),
+            indicadores_usados=indicadores_usados,
+        )
+        id_modelo = registro.id_modelo
+
+    logger.info(f"Challenger persistido (es_champion=false): version={version} id_modelo={id_modelo}")
     return id_modelo
 
 
@@ -687,7 +891,23 @@ def forecast_recursivo(modelo: ModeloEntrenado, df: pd.DataFrame, id_modelo: int
         c for c in feature_cols if c not in BASE_FEATURE_COLS
     ]
     id_geografia = int(df["id_geografia"].iloc[0])
-    rmse_val = metricas.get("rmse") or 0.0
+    # Bandas de incertidumbre calibradas con el RMSE del HOLDOUT final
+    # (nunca visto durante desarrollo), no con el RMSE de desarrollo — se
+    # confirmó que este último subestima el error real en datos no vistos
+    # (RMSE desarrollo≈0.0049 vs RMSE holdout≈0.0076, ver sección "Holdout
+    # final" en consideraciones/pipeline_machine_learning.md). Esto corrige
+    # solo la AMPLITUD del intervalo, no el sesgo direccional conocido: el
+    # holdout mostró una sobreestimación sistemática (los 6 errores fueron
+    # todos positivos, no ruido simétrico) — el punto central de la
+    # predicción (`precio_predicho`) no cambia, sigue teniendo esa misma
+    # tendencia a sobreestimar, documentada pero no corregida aquí.
+    rmse_val = modelo.metricas_holdout.get("rmse") or metricas.get("rmse") or 0.0
+    if modelo.metricas_holdout.get("rmse") is None:
+        logger.warning(
+            "Sin RMSE de holdout disponible para este modelo — las bandas de "
+            "incertidumbre usan el RMSE de desarrollo como fallback (subestima "
+            "el error real, ver 'Holdout final' en la documentación)."
+        )
 
     with SessionLocal() as db:
         # --- Backtesting: filas ya en df con precio_m2 real (test = validación

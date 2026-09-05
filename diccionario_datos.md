@@ -336,14 +336,18 @@ Registro de modelos de ML entrenados (champion/challenger). Ver src/tasks/ml.py.
 | Columna | Tipo | Descripción |
 |---|---|---|
 | id_modelo | integer | Identificador único del modelo entrenado **[PK]** |
-| nombre_modelo | character varying(20) | Algoritmo del modelo: 'naive', 'ridge' o 'xgboost' |
+| nombre_modelo | character varying(20) | Algoritmo del modelo: 'naive', 'ridge', 'xgboost' o 'sarimax' |
 | version | character varying(50) | Identificador de versión del modelo (timestamp de entrenamiento + algoritmo) |
 | fecha_entrenamiento | timestamp without time zone | Fecha y hora en que se entrenó el modelo |
 | es_champion | boolean | Si es el modelo actualmente activo sirviendo predicciones |
-| r2 | numeric(10,6) | Coeficiente de determinación (R²) obtenido en la validación walk-forward |
-| rmse | numeric(18,6) | Raíz del error cuadrático medio (walk-forward, sobre la variación trimestral del precio) |
-| mae | numeric(18,6) | Error absoluto medio (walk-forward, sobre la variación trimestral del precio) |
-| accuracy_direccional | numeric(10,6) | Proporción de trimestres donde el modelo acertó la dirección (sube/baja) de la variación del precio |
+| r2 | numeric(10,6) | Coeficiente de determinación (R²) de **desarrollo** (walk-forward sobre `VAL_ANIOS`, 2019-2024) — métrica usada para el gate de promoción a champion, no representa el desempeño real esperado |
+| rmse | numeric(18,6) | Raíz del error cuadrático medio de desarrollo (walk-forward, sobre la variación trimestral del precio) |
+| mae | numeric(18,6) | Error absoluto medio de desarrollo (walk-forward, sobre la variación trimestral del precio) |
+| accuracy_direccional | numeric(10,6) | Proporción de trimestres donde el modelo acertó la dirección (sube/baja) de la variación del precio, en desarrollo (walk-forward) |
+| r2_holdout | numeric(10,6) | Coeficiente de determinación (R²) del **holdout final** (2025T1-2026T2, nunca visto durante la selección de variables/hiperparámetros/modelo) — es la métrica a citar como desempeño real esperado. Evaluado una sola vez con el modelo ya congelado |
+| rmse_holdout | numeric(18,6) | Raíz del error cuadrático medio en el holdout final |
+| mae_holdout | numeric(18,6) | Error absoluto medio en el holdout final |
+| accuracy_direccional_holdout | numeric(10,6) | Proporción de trimestres del holdout final donde el modelo acertó la dirección (sube/baja) de la variación del precio |
 | indicadores_usados | json | Lista de los indicadores socioeconómicos usados como features en este modelo (id + nombre) |
 | importancia_features | json | Peso/coeficiente de cada feature del modelo, ordenado por magnitud descendente |
 
@@ -595,13 +599,17 @@ Registro de modelos entrenados (champion/challenger). Ver dbt/models/core/dim_mo
 |---|---|---|
 | id_modelo | integer | Identificador único del modelo entrenado **[PK]** |
 | version | character varying(50) | Identificador de versión del modelo (timestamp de entrenamiento + algoritmo) |
-| algoritmo | character varying(20) | 'naive', 'ridge' o 'xgboost' |
+| algoritmo | character varying(20) | 'naive', 'ridge', 'xgboost' o 'sarimax'. Desde `id_modelo=13`, cada corrida del flow persiste una fila por los 4 candidatos (`es_champion=true` solo en el ganador del gate; los demás quedan como challengers comparativos, sin `.pkl`/SHAP en MinIO) |
 | fecha_entrenamiento | timestamp without time zone | Fecha y hora en que se entrenó el modelo |
 | hiperparametros | json | Hiperparámetros ganadores del modelo (ej. alpha de Ridge) |
-| r2 | numeric(10,6) | Coeficiente de determinación (R²) obtenido en la validación walk-forward |
-| accuracy_direccional | numeric(10,6) | Proporción de trimestres donde el modelo acertó la dirección (sube/baja) de la variación del precio |
-| rmse | numeric(18,6) | Raíz del error cuadrático medio (walk-forward, sobre la variación trimestral del precio) |
-| mae | numeric(18,6) | Error absoluto medio (walk-forward, sobre la variación trimestral del precio) |
+| r2 | numeric(10,6) | Coeficiente de determinación (R²) de **desarrollo** (walk-forward sobre `VAL_ANIOS`, 2019-2024) — métrica usada para el gate de promoción a champion, no representa el desempeño real esperado |
+| accuracy_direccional | numeric(10,6) | Proporción de trimestres donde el modelo acertó la dirección (sube/baja) de la variación del precio, en desarrollo (walk-forward) |
+| rmse | numeric(18,6) | Raíz del error cuadrático medio de desarrollo (walk-forward, sobre la variación trimestral del precio) |
+| mae | numeric(18,6) | Error absoluto medio de desarrollo (walk-forward, sobre la variación trimestral del precio) |
+| r2_holdout | numeric(10,6) | Coeficiente de determinación (R²) del **holdout final** (2025T1-2026T2, nunca visto durante la selección de variables/hiperparámetros/modelo) — es la métrica a citar como desempeño real esperado. Evaluado una sola vez con el modelo ya congelado, entrenado solo con datos de desarrollo (< 2025) |
+| accuracy_direccional_holdout | numeric(10,6) | Proporción de trimestres del holdout final donde el modelo acertó la dirección (sube/baja) de la variación del precio |
+| rmse_holdout | numeric(18,6) | Raíz del error cuadrático medio en el holdout final |
+| mae_holdout | numeric(18,6) | Error absoluto medio en el holdout final |
 | es_champion | boolean | Si es el modelo actualmente activo sirviendo predicciones |
 | ruta_minio_modelo | character varying(300) | Ruta del archivo .pkl del modelo serializado, almacenado en MinIO |
 | ruta_minio_shap | character varying(300) | Ruta del gráfico de explicabilidad (SHAP para XGBoost, coeficientes estandarizados para Ridge), almacenado en MinIO |

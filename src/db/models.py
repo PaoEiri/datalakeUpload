@@ -75,7 +75,7 @@ class FuenteRegistradaHistorial(Base):
 
 class MLModelRegistry(Base):
     __tablename__ = "ml_model_registry"
-    __table_args__ = (CheckConstraint("algoritmo IN ('naive', 'ridge', 'xgboost')"),)
+    __table_args__ = (CheckConstraint("algoritmo IN ('naive', 'ridge', 'xgboost', 'sarimax')"),)
 
     id_modelo = Column(Integer, primary_key=True, index=True)
     version = Column(String(50), unique=True, nullable=False)
@@ -88,6 +88,15 @@ class MLModelRegistry(Base):
     accuracy_direccional = Column(Numeric(10, 6), nullable=True)
     rmse = Column(Numeric(18, 6), nullable=True)
     mae = Column(Numeric(18, 6), nullable=True)
+    # Métricas de holdout final (2025T1-2026T2, nunca visto durante
+    # selección de variables/hiperparámetros/modelo) — ver
+    # src/tasks/ml.py::_evaluar_holdout. Son las que deben citarse como
+    # desempeño real esperado; r2/accuracy_direccional/rmse/mae de arriba
+    # son las de desarrollo (walk-forward sobre VAL_ANIOS).
+    r2_holdout = Column(Numeric(10, 6), nullable=True)
+    accuracy_direccional_holdout = Column(Numeric(10, 6), nullable=True)
+    rmse_holdout = Column(Numeric(18, 6), nullable=True)
+    mae_holdout = Column(Numeric(18, 6), nullable=True)
     es_champion = Column(Boolean, nullable=False, default=False)
     ruta_minio_modelo = Column(String(300), nullable=True)
     ruta_minio_shap = Column(String(300), nullable=True)

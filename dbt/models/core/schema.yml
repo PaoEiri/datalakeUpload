@@ -164,6 +164,14 @@ models:
         data_type: numeric(18,6)
       - name: accuracy_direccional
         data_type: numeric(10,6)
+      - name: r2_holdout
+        data_type: numeric(10,6)
+      - name: rmse_holdout
+        data_type: numeric(18,6)
+      - name: mae_holdout
+        data_type: numeric(18,6)
+      - name: accuracy_direccional_holdout
+        data_type: numeric(10,6)
       - name: indicadores_usados
         data_type: json
       - name: importancia_features

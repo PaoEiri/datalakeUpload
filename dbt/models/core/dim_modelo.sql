@@ -15,6 +15,13 @@ SELECT
     rmse,
     mae,
     accuracy_direccional,
+    -- Holdout final (2025T1-2026T2), nunca visto durante desarrollo — el
+    -- desempeño real esperado del modelo (ver consideraciones/pipeline_machine_learning.md).
+    -- r2/rmse/mae/accuracy_direccional de arriba son de desarrollo (walk-forward).
+    r2_holdout,
+    rmse_holdout,
+    mae_holdout,
+    accuracy_direccional_holdout,
     indicadores_usados,
     importancia_features
 FROM {{ source('ml_registry', 'ml_model_registry') }}

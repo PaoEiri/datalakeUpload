@@ -11,6 +11,7 @@ from src.tasks.ml import (
     validate_walkforward,
     decide_gate,
     persist_model,
+    persist_challenger,
     forecast_recursivo,
 )
 
@@ -36,6 +37,13 @@ def ml_train_pipeline():
     modelo = modelos[champion_algoritmo]
     id_modelo = persist_model(modelo, metricas[champion_algoritmo], df)
     forecast_recursivo(modelo, df, id_modelo, metricas[champion_algoritmo])
+
+    # Challengers (todo lo que no ganó el gate) — se persisten solo con fines
+    # comparativos (Anexo D): mismas métricas dev+holdout, es_champion=false,
+    # sin artefactos de despliegue (.pkl/SHAP).
+    for nombre, mod in modelos.items():
+        if nombre != champion_algoritmo:
+            persist_challenger(mod, df)
 
     logger.info(f"Pipeline de ML completado. Nuevo champion: {champion_algoritmo} (id_modelo={id_modelo}).")
 
