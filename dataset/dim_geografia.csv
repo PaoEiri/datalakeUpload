@@ -1,0 +1,16 @@
+id_geografia,nombre,codigo_ine,es_codigo_oficial_ine,nivel,nivel_orden,codigo_municipio,codigo_provincia,codigo_ccaa,codigo_pais
+15,Málaga (Municipio),29067,TRUE,Municipio,4,29067,29,01,108
+4,Bailén-Miraflores,2906701,FALSE,Distrito,5,29067,29,01,108
+9,Campanillas,2906702,FALSE,Distrito,5,29067,29,01,108
+7,Carretera de Cádiz,2906703,FALSE,Distrito,5,29067,29,01,108
+1,Centro,2906704,FALSE,Distrito,5,29067,29,01,108
+8,Churriana,2906705,FALSE,Distrito,5,29067,29,01,108
+3,Ciudad Jardín,2906706,FALSE,Distrito,5,29067,29,01,108
+6,Cruz de Humilladero,2906707,FALSE,Distrito,5,29067,29,01,108
+2,Este,2906708,FALSE,Distrito,5,29067,29,01,108
+5,Palma-Palmilla,2906709,FALSE,Distrito,5,29067,29,01,108
+10,Puerto de la Torre,2906710,FALSE,Distrito,5,29067,29,01,108
+11,Teatinos-Universidad,2906711,FALSE,Distrito,5,29067,29,01,108
+12,Málaga (Provincia),29,TRUE,Provincia,3,,29,01,108
+13,Andalucía,01,TRUE,Comunidad Autónoma,2,,,01,108
+14,España,108,TRUE,País,1,,,,108
