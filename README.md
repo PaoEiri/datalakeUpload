@@ -19,21 +19,26 @@ Trabajo Final de Máster — Arquitectura de datos end-to-end para la ingesta, a
 
 ## Resumen
 
-Pipeline de datos end-to-end (ingesta → data warehouse → visualización) que analiza el mercado inmobiliario de Málaga a partir de datos abiertos de Tinsa, el Ministerio de Transportes y el INE. Desde 2001 hasta 2026, el precio por m² en el municipio de Málaga ha pasado de **€696 a €2.931** (+14,7% solo en el último año), con diferencias de hasta el **137,83%** en 10 años entre distritos.
+Pipeline de datos end-to-end (ingesta → data warehouse → visualización) que analiza el mercado inmobiliario de Málaga a partir de datos abiertos de Tinsa, el Ministerio de Transportes y el INE. Desde 2001 hasta 2026, el precio por m² en el municipio de Málaga ha pasado de **€696 a €3.004** (T3 2026, +13,8% solo en el último año), con diferencias de hasta el **148,52%** en 10 años entre distritos.
 
 **🔗 Dashboard interactivo**: https://paoeiri.github.io/datalakeUpload/docs/index.html
 
 ### Vistas del dashboard
 
+**Portada: resumen del mercado inmobiliario en Málaga**
+Indicadores clave del último trimestre disponible: último precio por m² en Málaga capital (€3.004/m² en T3 2026, +13,8% interanual), transacciones del último trimestre (3.090 en T2 2026, +5,2% interanual), precio proyectado a un año (€3.300/m² para T3 2027, +9,69%) y los extremos por distrito (Este como el más caro, Campanillas como el más barato y el de mayor subida interanual). Desde aquí se navega al resto de vistas.
+
+![Portada del dashboard](docs/images/Pagina_0.png)
+
 **Evolución del precio de la vivienda en Málaga vs Andalucía vs España**
 Precio por m², transacciones por tipo de vivienda (libre, segunda mano, nueva, protegida) y variación interanual, con serie histórica trimestral desde 2001.
 
-![Evolución del precio de la vivienda](docs/images/dashboard-evolucion-precios.png)
+![Evolución del precio de la vivienda](docs/images/Pagina_1.png)
 
 **Comparativa por distritos**
-Mapa de calor y ranking de los 11 distritos de Málaga por precio actual, variación a 1 y 10 años. Bailén-Miraflores lidera el crecimiento a 10 años (+137,83%), Campanillas el crecimiento interanual (+26,93%), y Este tiene el precio máximo actual (€3.929/m²).
+Mapa de calor y ranking de los 11 distritos de Málaga por precio actual, variación a 1 y 10 años. Con datos de T3 2026, Bailén-Miraflores lidera el crecimiento a 10 años (+148,52%), Campanillas el crecimiento interanual (+19,37%) y Este tiene el precio máximo actual (€3.936/m²).
 
-![Comparativa por distritos](docs/images/dashboard-distritos.png)
+![Comparativa por distritos](docs/images/Pagina_2.png)
 
 **Relación entre indicadores socioeconómicos y precio de la vivienda**
 Análisis de correlación (Pearson) entre indicadores del INE (demográficos, renta, Gini) y la variación del precio de vivienda, con R² y significancia estadística calculados sobre variaciones interanuales para evitar correlaciones espurias por tendencia compartida.
@@ -43,7 +48,7 @@ Análisis de correlación (Pearson) entre indicadores del INE (demográficos, re
 **Predicción del precio de la vivienda en Málaga**
 Proyección del precio por m² a corto y mediano plazo mediante el modelo de Machine Learning champion (ver [Pipeline de Machine Learning](#pipeline-de-machine-learning)), con su intervalo de confianza y métricas de error asociadas.
 
-![Predicción del precio de la vivienda en Málaga](docs/images/pagina_7.jpg)
+![Predicción del precio de la vivienda en Málaga](docs/images/Pagina_7.png)
 
 ---
 
@@ -628,6 +633,14 @@ usando el formato **en negrita** de la celda para distinguir cabeceras de filas 
 datos, más robusto que "todas las columnas vacías" ante municipios con recuento
 genuinamente cero, ej. Júzcar/vivienda nueva). Es idempotente: trunca e inserta de
 nuevo cada tabla. No actualiza `fuentes_registradas` ni `datasets_upload`.
+
+> **Solo para la carga inicial.** Los nombres de fichero están fijados al snapshot
+> original del TFM y no siguen al catálogo. Una vez que una fuente tiene una versión
+> subida por la API, volver a ejecutar este script pisaría `staging` con datos más
+> antiguos que los vigentes, así que se niega a ejecutarse (lista las fuentes
+> afectadas) salvo con `--force`. Para recargar la versión vigente de una fuente usa
+> `POST /fuentes_registradas/{id_fuente}/reprocesar` o
+> `flows/04_staging_manual.py <id_fuente>`.
 
 ### Camino 2 — productivo (para cuando el INE/Tinsa/Ministerio publiquen una versión nueva)
 
